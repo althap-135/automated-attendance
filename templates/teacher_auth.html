@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Staff Face Authentication{% endblock %}
+
+{% block content %}
+<div class="content-grid" style="grid-template-columns: 1.5fr 1fr;">
+    <!-- Camera Scanner Card -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Staff Facial Auth Camera</h3>
+            <span class="badge badge-muted" id="auth-status">
+                <i class="fas fa-lock"></i> Locked
+            </span>
+        </div>
+        
+        <div class="camera-container">
+            <video id="camera-video" muted></video>
+            <canvas id="camera-overlay"></canvas>
+            
+            <div class="scanner-ui">
+                <div class="scanner-corner corner-tl"></div>
+                <div class="scanner-corner corner-tr"></div>
+                <div class="scanner-corner corner-bl"></div>
+                <div class="scanner-corner corner-br"></div>
+            </div>
+        </div>
+        
+        <div class="grid-2" style="margin-top: 20px;">
+            <button id="btn-start-auth" class="btn-primary">
+                <i class="fas fa-video"></i> Start Auth Scan
+            </button>
+            <button id="btn-stop-auth" class="btn-secondary" disabled>
+                <i class="fas fa-video-slash"></i> Stop Camera
+            </button>
+        </div>
+    </div>
+    
+    <!-- Info panel -->
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div class="card-header">
+                <h3>Access Control Panel</h3>
+            </div>
+            
+            <div style="line-height: 1.6; color: var(--text-secondary);">
+                <p style="margin-bottom: 16px;">
+                    Authentication is strictly protected via Face Recognition.
+                </p>
+                
+                <div class="badge badge-warning" style="margin-bottom: 20px; display: flex; width: 100%; justify-content: center; padding: 10px; border-radius: var(--radius-sm);">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Only registered staff (Teachers/Advisors) can authenticate.</span>
+                </div>
+                
+                <h4 style="color: white; margin-bottom: 10px;">Security Policies:</h4>
+                <ul style="padding-left: 20px; margin-bottom: 20px; font-size: 0.9rem; display: flex; flex-direction: column; gap: 8px;">
+                    <li>Access allowed only after successful facial recognition matching.</li>
+                    <li>Both Teachers and Advisors must use Staff Face Authentication.</li>
+                    <li>This verifies credentials for protected actions (Correction, Finalization, etc.).</li>
+                    <li>All staff logins and authenticated actions are logged in the audit trail.</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div id="auth-alert" style="display: none;" class="badge badge-danger">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="auth-alert-text">Error message</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/camera.js') }}"></script>
+<script>
+    const video = document.getElementById('camera-video');
+    const overlay = document.getElementById('camera-overlay');
+    const btnStart = document.getElementById('btn-start-auth');
+    const btnStop = document.getElementById('btn-stop-auth');
+    const authStatus = document.getElementById('auth-status');
+    const alertBox = document.getElementById('auth-alert');
+    const alertText = document.getElementById('auth-alert-text');
+
+    btnStart.addEventListener('click', async () => {
+        const success = await startCamera(video);
+        if (success) {
+            btnStart.disabled = true;
+            btnStop.disabled = false;
+            
+            authStatus.className = 'badge badge-warning';
+            authStatus.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Authenticating...`;
+            alertBox.style.display = 'none';
+            
+            // Start scanning for staff (using the teacher trainer model)
+            startScanning(video, overlay, 'teacher', handleAuthSuccess, handleAuthFailure);
+        }
+    });
+
+    btnStop.addEventListener('click', () => {
+        stopCamera();
+        btnStart.disabled = false;
+        btnStop.disabled = true;
+        
+        authStatus.className = 'badge badge-muted';
+        authStatus.innerHTML = `<i class="fas fa-lock"></i> Locked`;
+        
+        const ctx = overlay.getContext('2d');
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+    });
+
+    function handleAuthSuccess(data) {
+        authStatus.className = 'badge badge-success';
+        authStatus.innerHTML = `<i class="fas fa-lock-open"></i> Access Granted`;
+        
+        stopCamera();
+        
+        // Check if there is a redirect URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const nextUrl = urlParams.get('redirect') || "{{ url_for('teacher_dashboard') }}";
+        
+        setTimeout(() => {
+            window.location.href = nextUrl;
+        }, 1200);
+    }
+
+    function handleAuthFailure(data) {
+        if (data.message === "Face detected but not recognized.") {
+            alertText.textContent = "Staff authorization mismatch. Ensure face is enrolled.";
+            alertBox.style.display = 'flex';
+        }
+    }
+</script>
+{% endblock %}

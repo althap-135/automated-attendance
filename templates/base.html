@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexAttend AI Portal</title>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <style>
+        /* Account Dropdown Animations and styling */
+        .quick-profile-dropdown {
+            transform-origin: top right;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        /* Slider switch styling */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #1e293b;
+            transition: .4s;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #64748b;
+            transition: .4s;
+        }
+
+        input:checked + .slider {
+            background-color: rgba(6, 182, 212, 0.2);
+            border-color: #00f3ff;
+        }
+
+        input:checked + .slider:before {
+            background-color: #00f3ff;
+            transform: translateX(24px);
+            box-shadow: 0 0 8px rgba(0, 243, 255, 0.5);
+        }
+
+        .slider.round {
+            border-radius: 24px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="logo-container">
+            <div class="logo-icon" style="background: linear-gradient(135deg, #0066ff 0%, #00f3ff 100%);">
+                <i class="fas fa-portrait"></i>
+            </div>
+            <div class="logo-text">
+                <h1>NexAttend <span style="color: #00f3ff;">AI</span></h1>
+                <p>Attendance System</p>
+            </div>
+        </div>
+
+        <ul class="nav-links">
+            <li class="{% if request.path == '/' %}active{% endif %}">
+                <a href="{{ url_for('home') }}">
+                    <i class="fas fa-th-large"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="{% if request.path == '/attendance' %}active{% endif %}">
+                <a href="{{ url_for('attendance_page') }}">
+                    <i class="fas fa-camera"></i>
+                    <span>Attendance</span>
+                </a>
+            </li>
+            <li class="{% if request.path == '/search' %}active{% endif %}">
+                <a href="{{ url_for('search_page') }}">
+                    <i class="fas fa-search"></i>
+                    <span>Student Search</span>
+                </a>
+            </li>
+            <li class="{% if request.path == '/analytics' %}active{% endif %}">
+                <a href="{{ url_for('analytics_page') }}">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Analytics</span>
+                </a>
+            </li>
+            <li class="{% if request.path == '/history' %}active{% endif %}">
+                <a href="{{ url_for('history_page') }}">
+                    <i class="fas fa-bell"></i>
+                    <span>Notifications</span>
+                </a>
+            </li>
+            <li class="{% if request.path == '/settings' %}active{% endif %}">
+                <a href="{{ url_for('settings_page') }}">
+                    <i class="fas fa-sliders-h"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('api_teacher_logout') }}">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </li>
+        </ul>
+
+        <!-- Teacher Login Status -->
+        <div class="teacher-profile-card">
+            {% if is_logged_in %}
+                <div class="teacher-info">
+                    <div class="teacher-avatar">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div class="teacher-details">
+                        <h4>{{ current_teacher_name }}</h4>
+                        <p>ID: {{ current_teacher_id }}</p>
+                    </div>
+                </div>
+                <a href="{{ url_for('api_teacher_logout') }}" class="btn-logout" style="text-decoration: none;">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Log Out</span>
+                </a>
+            {% else %}
+                <div class="teacher-info" style="justify-content: center; text-align: center; flex-direction: column;">
+                    <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 8px;">Access is locked.</p>
+                    <a href="{{ url_for('login') }}" class="btn-primary" style="padding: 8px 12px; font-size: 0.8rem; width: 100%; border-radius: var(--radius-sm); text-decoration: none; text-align: center;">
+                        <i class="fas fa-lock"></i> Log In
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </aside>
+
+    <!-- Main Content Panel -->
+    <main class="main-content">
+        <header class="top-nav-bar-trail">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" title="Toggle Menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="top-brand-trail">
+                    <i class="fas fa-portrait" style="color: var(--accent); font-size: 1.3rem;"></i>
+                    <span style="font-weight: 700; font-size: 1.15rem; color: white; letter-spacing: 0.5px;">NexAttend <span style="color: #00f3ff;">AI</span></span>
+                </div>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 24px;">
+                <!-- Today's Date and Month Display -->
+                <div class="header-date-container" style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px; color: var(--text-secondary); font-size: 0.85rem; font-weight: 500;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-calendar-alt" style="color: var(--accent); font-size: 0.95rem;"></i>
+                        <span id="header-date-text" style="color: white; font-weight: 600;"></span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-clock" style="color: var(--accent); font-size: 0.95rem;"></i>
+                        <span id="header-time-text" style="color: var(--text-secondary); font-weight: 600;"></span>
+                    </div>
+                </div>
+
+                <!-- Account & Class/Teacher Details -->
+                <div style="position: relative;">
+                    <div class="header-account-section" id="header-profile-trigger" style="display: flex; align-items: center; gap: 12px; border-left: 1px solid var(--border-color); padding-left: 20px; cursor: pointer;">
+                        <div style="text-align: right; line-height: 1.35;">
+                            <div style="font-size: 0.88rem; font-weight: 600; color: white;">
+                                {% if is_logged_in %}
+                                    {{ current_user.name }}
+                                {% else %}
+                                    Guest
+                                {% endif %}
+                            </div>
+                            <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500;">
+                                {% if is_logged_in %}
+                                    {% if current_user.role == 'student' %}
+                                        Class: {{ current_user.department_or_class }} | Sec: {{ current_user.section }}
+                                    {% else %}
+                                        {{ current_user.department_or_class }} | Sec: {{ current_user.section }}
+                                    {% endif %}
+                                {% else %}
+                                    Unassigned Class
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="avatar-badge-trail" style="font-size: 1.9rem; color: var(--accent); display: flex; align-items: center;">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Profile Dropdown Menu -->
+                    <div class="quick-profile-dropdown" id="quick-profile-dropdown" style="display: none; position: absolute; right: 0; top: 100%; width: 280px; background: #0f172a; border: 1px solid rgba(6, 182, 212, 0.25); border-radius: var(--radius-md); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); z-index: 999; margin-top: 10px; padding: 16px; transition: opacity 0.2s ease-in-out;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                            <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #0066ff, #00f3ff); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: white;">
+                                <i class="fas fa-user-tie"></i>
+                            </div>
+                            <div style="line-height: 1.3;">
+                                <h4 style="margin: 0; font-size: 0.9rem; color: white;">
+                                    {% if is_logged_in %}
+                                        {{ current_user.name }}
+                                    {% else %}
+                                        Guest
+                                    {% endif %}
+                                </h4>
+                                <span style="font-size: 0.72rem; color: #00f3ff; font-weight: 600;">
+                                    {% if is_logged_in %}
+                                        {{ current_user.role.upper() }}
+                                    {% else %}
+                                        STAFF
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 14px; text-align: left;">
+                            {% if is_logged_in %}
+                                <div><strong>Email:</strong> {{ current_user.email }}</div>
+                                <div><strong>{% if current_user.institution_type == 'School' %}Class{% else %}Dept{% endif %}:</strong> {{ current_user.department_or_class }}</div>
+                                {% if current_user.institution_type != 'School' and current_user.year %}
+                                    <div><strong>Year:</strong> {{ current_user.year }}</div>
+                                {% endif %}
+                                <div><strong>Section:</strong> {{ current_user.section }}</div>
+                            {% else %}
+                                <div><strong>Status:</strong> Not logged in</div>
+                            {% endif %}
+                        </div>
+                        {% if is_logged_in and current_user.role != 'student' %}
+                            <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
+                                <button id="btn-open-time-settings" class="btn-primary" style="width: 100%; text-align: left; padding: 8px 12px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.8rem; border-radius: var(--radius-sm);">
+                                    <i class="fas fa-clock"></i> Attendance Time Settings
+                                </button>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Global Alert Notification Area (No Popups) -->
+        <div id="global-alert-container" style="display: none; margin-bottom: 24px;">
+            <div id="global-alert-box" class="badge" style="width: 100%; padding: 16px; border-radius: var(--radius-md); font-weight: 600; display: flex; align-items: center; gap: 12px; font-size: 0.95rem; box-shadow: var(--shadow); transition: var(--transition);">
+                <i id="global-alert-icon" class="fas"></i>
+                <span id="global-alert-message"></span>
+            </div>
+        </div>
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Floating AI Chat Assistant (Pill-shaped Trailhead widget style) -->
+    <button id="ai-chat-bubble" class="ai-chat-bubble" title="Ask NexAttend AI">
+        <i class="fas fa-robot"></i>
+        <span class="ai-chat-text">Ask NexAttend AI</span>
+        <span class="ai-badge-glowing"></span>
+    </button>
+
+    <!-- AI Chat Panel -->
+    <div id="ai-chat-panel" class="ai-chat-panel">
+        <div class="ai-chat-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="ai-avatar-circle">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div>
+                    <h4 style="font-size: 0.95rem; font-weight: 600; margin: 0; color: white;">NexAttend AI Assistant</h4>
+                    <span style="font-size: 0.7rem; color: #10b981; display: flex; align-items: center; gap: 4px; font-weight: 500;">
+                        <i class="fas fa-circle" style="font-size: 0.55rem; color: #10b981;"></i> Online
+                    </span>
+                </div>
+            </div>
+            <button id="ai-chat-close" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.1rem; transition: var(--transition);">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="ai-chat-messages" id="ai-chat-messages">
+            <div class="ai-msg ai-msg-received">
+                Hi! I am the NexAttend AI Assistant. I have real-time access to the college database. Ask me anything about student records, statistics, parent contacts, or today's logs! (e.g. "Who is absent today?")
+            </div>
+        </div>
+        
+        <div class="ai-chat-input-area">
+            <input type="text" id="ai-chat-input" placeholder="Type your query..." autocomplete="off">
+            <button id="ai-chat-send" title="Send Message">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        window.INSTITUTION_TYPE = "{{ current_user.institution_type if is_logged_in else 'College' }}";
+    </script>
+    <!-- Global App JavaScript -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        // Update live header date/time clock
+        function updateLiveClock() {
+            const dateTextEl = document.getElementById('header-date-text');
+            const timeTextEl = document.getElementById('header-time-text');
+            if (!dateTextEl || !timeTextEl) return;
+            
+            const now = new Date();
+            
+            // Format: Friday, 03 July 2026
+            const dateOptions = { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' };
+            dateTextEl.textContent = now.toLocaleDateString('en-US', dateOptions);
+            
+            // Format: 07:50:11 PM
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+            timeTextEl.textContent = now.toLocaleTimeString('en-US', timeOptions);
+        }
+        updateLiveClock();
+        setInterval(updateLiveClock, 1000);
+
+        // Sidebar Toggle Handler
+        const sidebarToggle = document.getElementById('sidebar-toggle-btn');
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('.main-content');
+        
+        if (sidebarToggle && sidebar && mainContent) {
+            const handleToggle = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                sidebar.classList.toggle('active');
+                mainContent.classList.toggle('sidebar-active');
+            };
+            
+            sidebarToggle.addEventListener('click', handleToggle);
+            sidebarToggle.addEventListener('touchstart', handleToggle, { passive: false });
+            
+            // Close sidebar when clicking/touching outside of it
+            const handleOutsideClick = (e) => {
+                if (sidebar.classList.contains('active')) {
+                    if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                        sidebar.classList.remove('active');
+                        mainContent.classList.remove('sidebar-active');
+                    }
+                }
+            };
+            
+            document.addEventListener('click', handleOutsideClick);
+            document.addEventListener('touchstart', handleOutsideClick, { passive: true });
+        }
+
+        // AI Chat Assistant Toggle & Messaging
+        const bubble = document.getElementById('ai-chat-bubble');
+        const panel = document.getElementById('ai-chat-panel');
+        const closeBtn = document.getElementById('ai-chat-close');
+        const sendBtn = document.getElementById('ai-chat-send');
+        const input = document.getElementById('ai-chat-input');
+        const msgArea = document.getElementById('ai-chat-messages');
+
+        if (bubble && panel && closeBtn) {
+            bubble.addEventListener('click', () => {
+                panel.classList.toggle('active');
+            });
+
+            closeBtn.addEventListener('click', () => {
+                panel.classList.remove('active');
+            });
+
+            // Close on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') panel.classList.remove('active');
+            });
+        }
+
+        const appendMessage = (text, isSender) => {
+            const msg = document.createElement('div');
+            msg.className = `ai-msg ${isSender ? 'ai-msg-sent' : 'ai-msg-received'}`;
+            msg.textContent = text;
+            msgArea.appendChild(msg);
+            msgArea.scrollTop = msgArea.scrollHeight;
+        };
+
+        const appendTypingIndicator = () => {
+            const indicator = document.createElement('div');
+            indicator.className = 'ai-msg ai-msg-received ai-msg-typing';
+            indicator.id = 'ai-typing-indicator';
+            indicator.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+            msgArea.appendChild(indicator);
+            msgArea.scrollTop = msgArea.scrollHeight;
+        };
+
+        const removeTypingIndicator = () => {
+            const indicator = document.getElementById('ai-typing-indicator');
+            if (indicator) indicator.remove();
+        };
+
+        const handleSendMessage = async () => {
+            const text = input.value.trim();
+            if (!text) return;
+
+            // Display user message
+            appendMessage(text, true);
+            input.value = '';
+
+            // Display typing indicator
+            appendTypingIndicator();
+
+            try {
+                const response = await fetch('/api/ai/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+
+                const result = await response.json();
+                removeTypingIndicator();
+
+                if (result.success) {
+                    appendMessage(result.reply, false);
+                } else {
+                    appendMessage("Error: Failed to fetch response from AI Assistant.", false);
+                }
+            } catch (err) {
+                console.error("AI chat error:", err);
+                removeTypingIndicator();
+                appendMessage("Error: Network issue. Cannot reach AI Assistant.", false);
+            }
+        };
+
+        if (sendBtn && input) {
+            sendBtn.addEventListener('click', handleSendMessage);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') handleSendMessage();
+            });
+        }
+
+        // Global Inline Toast Alert Logic (No Popups)
+        window.showToast = function(message, type = 'success', duration = 4000) {
+            const container = document.getElementById('global-alert-container');
+            const box = document.getElementById('global-alert-box');
+            const icon = document.getElementById('global-alert-icon');
+            const text = document.getElementById('global-alert-message');
+            
+            if (!container || !box || !icon || !text) return;
+            
+            box.className = 'badge';
+            icon.className = 'fas';
+            
+            if (type === 'success') {
+                box.classList.add('badge-present');
+                box.style.border = '1px solid #10b981';
+                box.style.background = 'rgba(16, 185, 129, 0.12)';
+                box.style.color = '#10b981';
+                icon.classList.add('fa-check-circle');
+            } else if (type === 'error') {
+                box.classList.add('badge-absent');
+                box.style.border = '1px solid #ef4444';
+                box.style.background = 'rgba(239, 68, 68, 0.12)';
+                box.style.color = '#ef4444';
+                icon.classList.add('fa-times-circle');
+            } else {
+                box.classList.add('badge-muted');
+                box.style.border = '1px solid var(--border-color)';
+                box.style.background = 'rgba(255, 255, 255, 0.04)';
+                box.style.color = 'var(--text-secondary)';
+                icon.classList.add('fa-info-circle');
+            }
+            
+            text.textContent = message;
+            container.style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            if (duration > 0) {
+                setTimeout(() => {
+                    container.style.display = 'none';
+                }, duration);
+            }
+        };
+
+        // Check URL parameter for status toast triggers
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('status')) {
+            const status = urlParams.get('status');
+            if (status === 'success') {
+                showToast("Changed Successfully", "success");
+            } else if (status === 'finalized') {
+                showToast("Attendance finalized. WhatsApp alerts sent to parents.", "success");
+            }
+        }
+
+        // Account dropdown panel toggle and clicks outside logic
+        const profileTrigger = document.getElementById('header-profile-trigger');
+        const profileDropdown = document.getElementById('quick-profile-dropdown');
+        if (profileTrigger && profileDropdown) {
+            profileTrigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isHidden = profileDropdown.style.display === 'none' || !profileDropdown.style.display;
+                profileDropdown.style.display = isHidden ? 'block' : 'none';
+            });
+            document.addEventListener('click', (e) => {
+                if (!profileTrigger.contains(e.target) && !profileDropdown.contains(e.target)) {
+                    profileDropdown.style.display = 'none';
+                }
+            });
+        }
+
+        // Time Settings Modal logic
+        const btnOpenTimeSettings = document.getElementById('btn-open-time-settings');
+        
+        window.openTimeSettingsModal = async function() {
+            const timeSettingsModal = document.getElementById('modal-time-settings');
+            const profileDropdown = document.getElementById('quick-profile-dropdown');
+            if (profileDropdown) profileDropdown.style.display = 'none';
+            if (timeSettingsModal) timeSettingsModal.style.display = 'flex';
+            
+            const container = document.getElementById('time-settings-list');
+            if (!container) return;
+            container.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.8rem; text-align: center; margin: 20px 0;"><i class="fas fa-spinner fa-spin"></i> Loading class sections...</p>';
+            
+            try {
+                const res = await fetch('/api/settings/time_settings');
+                const data = await res.json();
+                if (data.success && data.classes.length > 0) {
+                    container.innerHTML = data.classes.map(c => `
+                        <div style="padding: 16px; border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-md); background: rgba(255,255,255,0.02); display: flex; flex-direction: column; gap: 12px; margin-bottom: 8px; text-align: left;">
+                            <h4 style="margin: 0; font-size: 0.95rem; color: white;">${c.department} (${c.year}) - Sec ${c.section}</h4>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                <div class="form-group" style="margin: 0;">
+                                    <label style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px; display: block;">Start Time</label>
+                                    <input type="time" class="form-input" id="start-time-${c.id}" value="${c.start_time || '09:00'}" style="padding: 8px 10px; font-size: 0.85rem; width: 100%; border-radius: var(--radius-sm);">
+                                </div>
+                                <div class="form-group" style="margin: 0;">
+                                    <label style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px; display: block;">End Time</label>
+                                    <input type="time" class="form-input" id="end-time-${c.id}" value="${c.end_time || '09:30'}" style="padding: 8px 10px; font-size: 0.85rem; width: 100%; border-radius: var(--radius-sm);">
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px;">
+                                <span style="font-size: 0.8rem; color: var(--text-secondary);">Automatic Submission</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="auto-submit-${c.id}" ${c.auto_submit_enabled ? 'checked' : ''}>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <div style="display: flex; gap: 8px; margin-top: 4px;">
+                                <button onclick="closeTimeSettingsModal()" class="btn-secondary" style="flex: 1; padding: 8px; font-size: 0.8rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.1); background: transparent; color: white; cursor: pointer;">
+                                    Cancel
+                                </button>
+                                <button onclick="saveClassTimeSettings(${c.id})" class="btn-primary" style="flex: 1; padding: 8px; font-size: 0.8rem; border-radius: var(--radius-sm); cursor: pointer;">
+                                    <i class="fas fa-save"></i> Save Settings
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.8rem; text-align: center; margin: 20px 0;">No class sections configured.</p>';
+                }
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = '<p style="color: #ef4444; font-size: 0.8rem; text-align: center; margin: 20px 0;">Failed to load class sections.</p>';
+            }
+        };
+ 
+        window.closeTimeSettingsModal = function() {
+            const timeSettingsModal = document.getElementById('modal-time-settings');
+            if (timeSettingsModal) timeSettingsModal.style.display = 'none';
+        };
+ 
+        window.saveClassTimeSettings = async function(classId) {
+            const startTime = document.getElementById(`start-time-${classId}`).value;
+            const endTime = document.getElementById(`end-time-${classId}`).value;
+            const autoSubmitEnabled = document.getElementById(`auto-submit-${classId}`).checked;
+            
+            try {
+                const res = await fetch('/api/settings/time_settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        class_id: classId,
+                        start_time: startTime,
+                        end_time: endTime,
+                        auto_submit_enabled: autoSubmitEnabled
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, "success");
+                } else {
+                    showToast(data.message, "error");
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to save time settings.", "error");
+            }
+        };
+ 
+        if (btnOpenTimeSettings) {
+            btnOpenTimeSettings.addEventListener('click', openTimeSettingsModal);
+        }
+    </script>
+
+    <!-- Modal: Attendance Time Settings -->
+    <div class="custom-modal" id="modal-time-settings" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 18, 42, 0.7); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+        <div class="card" style="width: 100%; max-width: 480px; margin: 20px; max-height: 85vh; overflow-y: auto; border: 1px solid rgba(6, 182, 212, 0.25); background: #0f172a; border-radius: var(--radius-lg); padding: 24px;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px; margin-bottom: 16px;">
+                <h3 style="margin: 0; color: white;"><i class="fas fa-clock" style="color: #00f3ff; margin-right: 6px;"></i> Attendance Time Settings</h3>
+                <button onclick="closeTimeSettingsModal()" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.25rem;"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="time-settings-list" style="display: flex; flex-direction: column;">
+                <!-- Dynamic Class Time Inputs loaded via JS -->
+            </div>
+        </div>
+    </div>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

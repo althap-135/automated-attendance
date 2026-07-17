@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFace Attendance System - Sign In</title>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-glass: rgba(16, 24, 48, 0.7);
+            --bg-glass-active: rgba(26, 38, 72, 0.85);
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --text-primary: #ffffff;
+            --text-secondary: #8e9bb4;
+            --accent-primary: #6c5ce7;
+            --accent-glow: rgba(108, 92, 231, 0.4);
+            --success-color: #2ecc71;
+            --error-color: #e74c3c;
+            --radius-lg: 16px;
+            --radius-md: 10px;
+            --radius-sm: 6px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Abstract Glow Orbs */
+        body::before, body::after {
+            content: '';
+            position: absolute;
+            width: 350px;
+            height: 350px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6c5ce7 0%, #a8a5ff 100%);
+            filter: blur(120px);
+            opacity: 0.15;
+            z-index: 0;
+        }
+
+        body::before {
+            top: 10%;
+            left: 10%;
+        }
+
+        body::after {
+            bottom: 10%;
+            right: 10%;
+        }
+
+        .auth-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 480px;
+            padding: 20px;
+        }
+
+        .auth-card {
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 40px 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            transition: var(--transition);
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary) 0%, #4834d4 100%);
+            box-shadow: 0 0 20px var(--accent-glow);
+            color: var(--text-primary);
+            font-size: 1.8rem;
+            margin-bottom: 12px;
+        }
+
+        .logo-section h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+            background: linear-gradient(to right, #fff, var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-section p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Tab Controls */
+        .tab-controls {
+            display: flex;
+            border-bottom: 2px solid var(--border-glass);
+            margin-bottom: 25px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 12px;
+            cursor: pointer;
+            position: relative;
+            transition: var(--transition);
+        }
+
+        .tab-btn.active {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--accent-primary);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        /* Forms Layout */
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 12px 12px 12px 42px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 8px var(--accent-glow);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .form-group select option {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        /* Row Layout */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        /* Dynamic Fields container styling */
+        .dynamic-fields {
+            margin-top: 15px;
+            border-top: 1px dashed var(--border-glass);
+            padding-top: 15px;
+        }
+
+        .d-none {
+            display: none !important;
+        }
+
+        /* Buttons */
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent-primary) 0%, #4834d4 100%);
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 14px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+            margin-top: 10px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(108, 92, 231, 0.5);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        /* Notifications / Alerts */
+        .alert-box {
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: var(--transition);
+        }
+
+        .alert-box.success {
+            background: rgba(46, 204, 113, 0.15);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            color: var(--success-color);
+        }
+
+        .alert-box.error {
+            background: rgba(231, 76, 60, 0.15);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            color: var(--error-color);
+        }
+
+        /* Toggle Link Section */
+        .auth-footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .auth-footer a {
+            color: var(--accent-primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <div class="auth-card">
+            
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <i class="fas fa-camera"></i>
+                </div>
+                <h2>SmartFace Portal</h2>
+                <p>Advanced AI-Based Attendance System</p>
+            </div>
+
+            <!-- Tab Toggles -->
+            <div class="tab-controls">
+                <button type="button" id="tab-login" class="tab-btn active" onclick="switchTab('login')">Sign In</button>
+                <button type="button" id="tab-register" class="tab-btn" onclick="switchTab('register')">Register</button>
+            </div>
+
+            <!-- System Alerts -->
+            <div id="alert-container" class="alert-box d-none">
+                <i id="alert-icon" class="fas"></i>
+                <span id="alert-text"></span>
+            </div>
+
+            <!-- LOGIN FORM -->
+            <form id="login-form" onsubmit="handleAuthSubmit(event, 'login')">
+                <div class="form-group">
+                    <label for="login-email">Email Address</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="login-email" required placeholder="name@institution.com">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="login-password" required placeholder="Enter password">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Sign In</button>
+            </form>
+
+            <!-- REGISTER FORM -->
+            <form id="register-form" class="d-none" onsubmit="handleAuthSubmit(event, 'register')">
+                <div class="form-group">
+                    <label for="reg-name">Full Name</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="reg-name" placeholder="Enter Full Name">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-email">Email Address</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="reg-email" placeholder="name@institution.com">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reg-role">Role</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user-tag" style="left:12px;"></i>
+                            <select id="reg-role" style="padding-left:36px;">
+                                <option value="teacher">Teacher</option>
+                                <option value="student">Student</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reg-inst-type">Institution Type</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-school" style="left:12px;"></i>
+                            <select id="reg-inst-type" onchange="toggleInstFields(this.value)" style="padding-left:36px;">
+                                <option value="College">College / Univ</option>
+                                <option value="School">High School</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-inst-name">Institution Name</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-university"></i>
+                        <input type="text" id="reg-inst-name" placeholder="E.g. VSB Engineering College">
+                    </div>
+                </div>
+
+                <!-- Dynamic Academic Info Block -->
+                <div class="dynamic-fields">
+                    <!-- College Specific Section -->
+                    <div id="college-fields">
+                        <div class="form-group">
+                            <label for="reg-dept">Department</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-graduation-cap"></i>
+                                <input type="text" id="reg-dept" placeholder="E.g. ECE - II Year">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="reg-year">Year</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <input type="text" id="reg-year" placeholder="E.g. 2nd Year">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="reg-sec-college">Section</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-users"></i>
+                                    <input type="text" id="reg-sec-college" placeholder="E.g. Section A">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- School Specific Section -->
+                    <div id="school-fields" class="d-none">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="reg-class">Class</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-chalkboard-teacher"></i>
+                                    <input type="text" id="reg-class" placeholder="E.g. Class 10">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="reg-sec-school">Section</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-users"></i>
+                                    <input type="text" id="reg-sec-school" placeholder="E.g. Section B">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-password">Password</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="reg-password" placeholder="Create password">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-confirm">Confirm Password</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="reg-confirm" placeholder="Confirm password">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Register Account</button>
+            </form>
+
+            <div class="auth-footer">
+                <span id="footer-text">Don't have an account?</span>
+                <a href="javascript:void(0)" id="footer-link" onclick="toggleMode()">Register</a>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let currentMode = "{{ page_type }}";
+
+        function switchTab(mode) {
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const tabLogin = document.getElementById('tab-login');
+            const tabRegister = document.getElementById('tab-register');
+            const footerText = document.getElementById('footer-text');
+            const footerLink = document.getElementById('footer-link');
+            
+            // Clear alerts
+            dismissAlert();
+
+            if (mode === 'login') {
+                loginForm.classList.remove('d-none');
+                registerForm.classList.add('d-none');
+                tabLogin.classList.add('active');
+                tabRegister.classList.remove('active');
+                footerText.textContent = "Don't have an account?";
+                footerLink.textContent = "Register";
+                currentMode = 'login';
+            } else {
+                loginForm.classList.add('d-none');
+                registerForm.classList.remove('d-none');
+                tabLogin.classList.remove('active');
+                tabRegister.classList.add('active');
+                footerText.textContent = "Already have an account?";
+                footerLink.textContent = "Sign In";
+                currentMode = 'register';
+            }
+        }
+
+        function toggleMode() {
+            if (currentMode === 'login') {
+                switchTab('register');
+            } else {
+                switchTab('login');
+            }
+        }
+
+        function toggleInstFields(value) {
+            const collegeBlock = document.getElementById('college-fields');
+            const schoolBlock = document.getElementById('school-fields');
+
+            if (value === 'College') {
+                collegeBlock.classList.remove('d-none');
+                schoolBlock.classList.add('d-none');
+            } else {
+                collegeBlock.classList.add('d-none');
+                schoolBlock.classList.remove('d-none');
+            }
+        }
+
+        function dismissAlert() {
+            const alertBox = document.getElementById('alert-container');
+            if (alertBox) {
+                alertBox.classList.add('d-none');
+            }
+        }
+
+        function showAlert(type, message) {
+            const alertBox = document.getElementById('alert-container');
+            const alertIcon = document.getElementById('alert-icon');
+            const alertText = document.getElementById('alert-text');
+
+            alertBox.classList.remove('d-none', 'success', 'error');
+            alertBox.classList.add(type);
+
+            if (type === 'success') {
+                alertIcon.className = 'fas fa-check-circle';
+            } else {
+                alertIcon.className = 'fas fa-exclamation-circle';
+            }
+
+            alertText.textContent = message;
+        }
+
+        async function handleAuthSubmit(event, mode) {
+            event.preventDefault();
+
+            let payload = {};
+            let endpoint = '';
+
+            if (mode === 'login') {
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                
+                if (!email || !password) {
+                    showAlert('error', 'Please enter email and password.');
+                    return;
+                }
+                payload = { email, password };
+                endpoint = '/api/login';
+            } else {
+                const name = document.getElementById('reg-name').value.trim();
+                const email = document.getElementById('reg-email').value.trim();
+                const role = document.getElementById('reg-role').value;
+                const instType = document.getElementById('reg-inst-type').value;
+                const instName = document.getElementById('reg-inst-name').value.trim();
+                const password = document.getElementById('reg-password').value;
+                const confirmPassword = document.getElementById('reg-confirm').value;
+
+                let deptOrClass = '';
+                let year = '';
+                let section = '';
+
+                if (instType === 'College') {
+                    deptOrClass = document.getElementById('reg-dept').value.trim();
+                    year = document.getElementById('reg-year').value.trim();
+                    section = document.getElementById('reg-sec-college').value.trim();
+                } else {
+                    deptOrClass = document.getElementById('reg-class').value.trim();
+                    section = document.getElementById('reg-sec-school').value.trim();
+                }
+
+                if (!name || !email || !instName || !deptOrClass || !section || !password || !confirmPassword) {
+                    showAlert('error', 'Please fill in all required registration fields.');
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    showAlert('error', 'Passwords do not match.');
+                    return;
+                }
+
+                payload = {
+                    name,
+                    email,
+                    role,
+                    institution_type: instType,
+                    institution_name: instName,
+                    department_or_class: deptOrClass,
+                    year,
+                    section,
+                    password,
+                    confirm_password: confirmPassword
+                };
+                endpoint = '/api/register';
+            }
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('success', result.message || 'Success! Redirecting...');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                } else {
+                    showAlert('error', result.message || 'Authentication error.');
+                }
+            } catch (err) {
+                console.error(err);
+                showAlert('error', 'Network error. Please try again.');
+            }
+        }
+
+        // Initialize based on Flask template injection
+        window.addEventListener('DOMContentLoaded', () => {
+            switchTab(currentMode);
+        });
+    </script>
+</body>
+</html>

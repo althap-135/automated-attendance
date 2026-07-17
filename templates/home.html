@@ -1,0 +1,723 @@
+{% extends 'base.html' %}
+
+{% block title %}NexAttend AI{% endblock %}
+
+{% block content %}
+<style>
+    /* Hero Container & Banner */
+    .hero-container {
+        position: relative;
+        margin-bottom: 24px;
+        width: 100%;
+    }
+
+    .hero-banner {
+        height: 250px;
+        background-image: url('/static/images/trailhead_banner.png');
+        background-size: cover;
+        background-position: center;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-color);
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 0 40px;
+        overflow: hidden;
+    }
+
+    /* Soft gradient overlay to enhance illustration readability */
+    .hero-banner::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, rgba(10, 18, 42, 0.45) 0%, rgba(10, 18, 42, 0.1) 100%);
+        pointer-events: none;
+    }
+
+    /* Floating Personalization Card inside Banner */
+    .banner-personalize-card {
+        background: rgba(10, 18, 42, 0.75);
+        backdrop-filter: blur(14px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: var(--radius-md);
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        max-width: 600px;
+        box-shadow: var(--shadow);
+        z-index: 5;
+        animation: slideUp 0.5s ease-out;
+    }
+
+    .personalize-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--accent-gradient);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.1rem;
+    }
+
+    .personalize-info h4 {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: white;
+        margin-bottom: 2px;
+    }
+
+    .personalize-info p {
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+    }
+
+    .btn-primary-pill {
+        background: var(--accent-gradient);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: var(--transition);
+        white-space: nowrap;
+        box-shadow: 0 4px 10px var(--accent-glow);
+    }
+
+    .btn-primary-pill:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(6, 182, 212, 0.35);
+    }
+
+    /* Overlapping Profile Card on Bottom Left */
+    .profile-overlap-card {
+        position: absolute;
+        bottom: -50px;
+        left: 40px;
+        width: 290px;
+        background: var(--bg-card);
+        backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 24px;
+        box-shadow: var(--shadow);
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        animation: slideUp 0.6s ease-out;
+    }
+
+    .profile-avatar-circle-overlap {
+        position: absolute;
+        top: -26px;
+        left: 24px;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: var(--bg-secondary);
+        border: 3px solid var(--bg-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent);
+        font-size: 1.8rem;
+        box-shadow: var(--shadow);
+    }
+
+    .profile-card-content {
+        margin-top: 14px;
+    }
+
+    .greeting-subtitle {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
+
+    .greeting-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: white;
+        margin: 4px 0 12px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .progress-section {
+        margin-bottom: 12px;
+    }
+
+    .progress-text {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.82rem;
+        margin-bottom: 6px;
+    }
+
+    .progress-text span {
+        color: var(--text-secondary);
+    }
+
+    .progress-text strong {
+        color: var(--accent);
+    }
+
+    .progress-bar-container-trail {
+        height: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 4px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+    }
+
+    .progress-bar-fill-trail {
+        height: 100%;
+        background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+        border-radius: 4px;
+    }
+
+    .badges-row {
+        display: flex;
+        gap: 8px;
+    }
+
+    .badge-item-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+    }
+
+    /* Main Section Area spacing */
+    .home-main-section {
+        margin-top: 75px;
+    }
+
+    @keyframes slideUp {
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    @media (max-width: 990px) {
+        .hero-banner {
+            justify-content: center;
+            padding: 20px;
+            height: auto;
+            min-height: 200px;
+        }
+        
+        .banner-personalize-card {
+            flex-direction: column;
+            text-align: center;
+            max-width: 100%;
+        }
+        
+        .profile-overlap-card {
+            position: relative;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .home-main-section {
+            margin-top: 20px;
+        }
+    }
+</style>
+
+<!-- Hero Section Banner (Salesforce Style) -->
+<div class="hero-container">
+    <div class="hero-banner">
+        <!-- Floating Personalization Card inside Banner -->
+        <div class="banner-personalize-card">
+            <div class="personalize-avatar">
+                <i class="fas fa-university"></i>
+            </div>
+            <div class="personalize-info">
+                {% if is_logged_in %}
+                    <h4 style="margin: 0; color: white; font-weight: 700; font-size: 1.1rem;">{{ current_user.institution_name }}</h4>
+                    <p style="margin: 2px 0 0 0; font-size: 0.85rem; color: var(--text-secondary);">
+                        {{ current_user.department_or_class }} &bull; {% if current_user.institution_type != 'School' and current_user.year %}{{ current_user.year }} &bull; {% endif %}Section {{ current_user.section }} &bull; Role: {{ current_user.role.title() }}
+                    </p>
+                {% else %}
+                    <h4>Personalize your learning journey</h4>
+                    <p>Register new student profiles and face snapshots to build the attendance registry.</p>
+                {% endif %}
+            </div>
+            <a href="{{ url_for('settings_page') }}" class="btn-primary-pill">Set up Preferences</a>
+        </div>
+    </div>
+    
+    <!-- Overlapping Profile Overlay Card -->
+    <div class="profile-overlap-card">
+        <div class="profile-avatar-circle-overlap">
+            <i class="fas fa-user-circle"></i>
+        </div>
+        <div class="profile-card-content">
+            <p class="greeting-subtitle">Good evening,</p>
+            <h3 class="greeting-title" title="{% if is_logged_in %}{{ current_user.name }}{% else %}Guest Admin{% endif %}">
+                {% if is_logged_in %}
+                    {{ current_user.name }}
+                {% else %}
+                    Guest Admin
+                {% endif %}!
+            </h3>
+            
+            <div class="progress-section">
+                <div class="progress-text">
+                    <span>Overall Rate</span>
+                    <strong id="stat-overall-rate">{{ overall_rate }}%</strong>
+                </div>
+                <div class="progress-bar-container-trail">
+                    <div class="progress-bar-fill-trail" id="stat-overall-bar" style="width: {{ overall_rate }}%;"></div>
+                </div>
+            </div>
+            
+            <div class="badges-row">
+                <div class="badge-item-icon" title="System Seeded">
+                    <i class="fas fa-database" style="color: #06b6d4;"></i>
+                </div>
+                <div class="badge-item-icon" title="AI models active">
+                    <i class="fas fa-brain" style="color: #10b981;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Feed Sections -->
+<div class="home-main-section">
+    <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h3 style="font-size: 1.4rem; font-weight: 700; color: white; margin-bottom: 4px;">
+                {% if current_class_section %}
+                    Dashboard: {{ current_class_section.department }}{% if current_user.institution_type != 'School' %} {{ current_class_section.year or '' }}{% endif %} - Section {{ current_class_section.section }}
+                {% else %}
+                    My Learning
+                {% endif %}
+            </h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">Track student progress and completed attendance sessions in one place.</p>
+        </div>
+        {% if class_sections_list %}
+        <div style="margin: 0; min-width: 250px;">
+            <label for="class-section-select" style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">Switch Class Section</label>
+            <select class="form-input" id="class-section-select" onchange="onClassSectionChange()" style="background: var(--bg-secondary); color: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 8px 12px; cursor: pointer; font-size: 0.9rem; transition: var(--transition); width: 100%;">
+                {% for cs in class_sections_list %}
+                <option value="{{ cs.id }}" {% if current_class_section and current_class_section.id == cs.id %}selected{% endif %}>
+                    {{ cs.department }} {{ cs.year or '' }} - {{ cs.section }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-data">
+                <h3 id="stat-total-students">{{ total_students }}</h3>
+                <p>Total Students</p>
+            </div>
+            <div class="stat-icon primary">
+                <i class="fas fa-users"></i>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-data">
+                <h3 id="stat-present-today">{{ today_present }}</h3>
+                <p>Present Today</p>
+            </div>
+            <div class="stat-icon success">
+                <i class="fas fa-user-check"></i>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-data">
+                <h3 id="stat-absent-today">{{ today_absent }}</h3>
+                <p>Absent / Unmarked</p>
+            </div>
+            <div class="stat-icon danger">
+                <i class="fas fa-user-times"></i>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-data">
+                <h3 id="stat-rate-today">{{ attendance_rate }}%</h3>
+                <p>Attendance Rate</p>
+            </div>
+            <div class="stat-icon warning">
+                <i class="fas fa-chart-line"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Present Students section -->
+    <div class="present-students-section" style="margin-top: 24px; margin-bottom: 28px;">
+        <style>
+            .pres-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 16px;
+            }
+            .pres-title {
+                font-size: 1.25rem;
+                font-weight: 700;
+                color: white;
+            }
+            .pres-count-badge {
+                font-size: 0.85rem;
+                font-weight: 600;
+                background: rgba(16, 185, 129, 0.1);
+                color: #10b981;
+                border: 1px solid rgba(16, 185, 129, 0.2);
+                padding: 6px 14px;
+                border-radius: 20px;
+            }
+            .pres-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+                gap: 16px;
+                margin-bottom: 16px;
+            }
+            .pres-card {
+                background: rgba(10, 18, 42, 0.55);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(6, 182, 212, 0.15); /* cyan border */
+                border-radius: 12px;
+                padding: 16px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                position: relative;
+                box-shadow: 0 4px 15px rgba(6, 182, 212, 0.03);
+            }
+            .pres-card:hover {
+                transform: translateY(-4px);
+                border-color: rgba(6, 182, 212, 0.4);
+                box-shadow: 0 8px 25px rgba(6, 182, 212, 0.15);
+            }
+            .pres-avatar-container {
+                position: relative;
+                width: 60px;
+                height: 60px;
+                margin-bottom: 10px;
+            }
+            .pres-avatar {
+                width: 100%;
+                height: 100%;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 2px solid rgba(6, 182, 212, 0.2);
+            }
+            .pres-indicator {
+                position: absolute;
+                bottom: 0;
+                right: 0;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: #10b981;
+                border: 2px solid #0a122a;
+            }
+            .pres-name {
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: white;
+                margin: 0;
+                width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .pres-empty-state {
+                background: rgba(10, 18, 42, 0.3);
+                border: 1px dashed var(--border-color);
+                border-radius: 12px;
+                padding: 40px;
+                text-align: center;
+                color: var(--text-secondary);
+                font-size: 0.9rem;
+                grid-column: 1 / -1;
+            }
+            .pres-card.collapsed-hidden {
+                display: none !important;
+            }
+            
+            /* Responsive layout rules */
+            @media (max-width: 576px) {
+                .pres-grid {
+                    grid-template-columns: repeat(2, 1fr) !important;
+                }
+            }
+            @media (min-width: 577px) and (max-width: 992px) {
+                .pres-grid {
+                    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
+                }
+            }
+        </style>
+
+        <div class="pres-header">
+            <div class="pres-title">Today's Present Students</div>
+            <div class="pres-count-badge" id="pres-today-count-badge">Present Today: {{ today_present }}</div>
+        </div>
+
+        <div class="pres-grid" id="pres-students-container">
+            {% if present_students %}
+                {% for st in present_students %}
+                    <div class="pres-card {% if loop.index > 8 %}collapsed-hidden{% endif %}" data-reg="{{ st.reg_number }}">
+                        <div class="pres-avatar-container">
+                            <svg class="pres-avatar" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="50" cy="50" r="48" fill="#115e59"/>
+                                <circle cx="50" cy="40" r="18" fill="#0d9488"/>
+                                <path d="M25 80 C 25 60, 75 60, 75 80" fill="#0d9488"/>
+                            </svg>
+                            <span class="pres-indicator"></span>
+                        </div>
+                        <div class="pres-name" title="{{ st.name }}">{{ st.name }}</div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="pres-empty-state" id="pres-empty-message">
+                    <i class="fas fa-user-slash" style="font-size: 2rem; margin-bottom: 10px; color: var(--text-muted);"></i>
+                    <p style="margin: 0;">No students have marked attendance yet.</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div id="pres-view-all-wrapper" style="text-align: center; margin-top: 10px; display: {% if present_students|length > 8 %}block{% else %}none{% endif %};">
+            <button class="btn-secondary" id="btn-pres-toggle-view" style="padding: 6px 16px; font-size: 0.8rem;" onclick="togglePresentViewLimit()">
+                View All Present Students
+            </button>
+        </div>
+    </div>
+
+    <!-- Subcontent Split Section -->
+    <div class="content-grid">
+        <!-- Quick Operations Panel -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Welcome to Student Management Portal</h3>
+            </div>
+            <div style="margin-top: 10px; line-height: 1.6; color: var(--text-secondary);">
+                <p style="margin-bottom: 20px;">
+                    This system leverages artificial intelligence to streamline attendance management. Students mark attendance by looking into the camera. Teachers authenticate with face recognition to review attendance, make corrections, and view deep analytics.
+                </p>
+                
+                <h4 style="color: white; margin-bottom: 12px;">Quick Operations</h4>
+                <div class="grid-2" style="margin-bottom: 20px;">
+                    <a href="{{ url_for('attendance_page') }}" class="btn-primary" style="text-decoration: none; padding: 20px; flex-direction: column; gap: 8px; justify-content: center; align-items: center; display: flex;">
+                        <i class="fas fa-camera" style="font-size: 1.5rem;"></i>
+                        <span>Student Scan Camera</span>
+                    </a>
+                    <a href="{{ url_for('teacher_auth_page') }}" class="btn-secondary" style="text-decoration: none; padding: 20px; flex-direction: column; gap: 8px; border: 1px dashed var(--accent); justify-content: center; align-items: center; display: flex;">
+                        <i class="fas fa-user-shield" style="font-size: 1.5rem; color: var(--accent);"></i>
+                        <span>Teacher Authorization</span>
+                    </a>
+                </div>
+                
+                <div class="badge badge-warning" style="padding: 10px; width: 100%; display: flex; justify-content: center; border-radius: var(--radius-sm);">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span style="margin-left: 6px;">Database must be seeded & faces trained in Settings page before scanning.</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Audit Log Panel -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Recent Audits</h3>
+                <a href="{{ url_for('history_page') }}" style="color: var(--accent-hover); font-size: 0.85rem; text-decoration: none; font-weight: 500;">View All</a>
+            </div>
+            <div class="table-wrapper">
+                {% if recent_logs %}
+                    <table style="font-size: 0.85rem;">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Teacher</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in recent_logs %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ log.student_name }}</strong><br>
+                                        <span style="font-size: 0.75rem; color: var(--text-muted);">{{ log.register_number }}</span>
+                                    </td>
+                                    <td>{{ log.teacher_name }}</td>
+                                    <td>
+                                        <span class="badge badge-warning" style="font-size: 0.7rem; padding: 2px 8px;">{{ log.reason }}</span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="text-center text-muted" style="padding: 40px 0;">
+                        No recent modifications logged.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let presExpanded = false;
+
+    window.togglePresentViewLimit = function() {
+        presExpanded = !presExpanded;
+        const cards = document.querySelectorAll('.pres-card');
+        const btn = document.getElementById('btn-pres-toggle-view');
+        
+        if (presExpanded) {
+            cards.forEach(card => card.classList.remove('collapsed-hidden'));
+            btn.textContent = "Show Less";
+        } else {
+            cards.forEach((card, index) => {
+                if (index >= 8) {
+                    card.classList.add('collapsed-hidden');
+                }
+            });
+            btn.textContent = "View All Present Students";
+        }
+    };
+
+    async function pollPresentStudents() {
+        try {
+            const res = await fetch('/api/attendance/today_present');
+            if (!res.ok) return;
+            const data = await res.json();
+            if (!data.success) return;
+            
+            // Update stats cards in real-time
+            const elPresent = document.getElementById('stat-present-today');
+            const elAbsent = document.getElementById('stat-absent-today');
+            const elRate = document.getElementById('stat-rate-today');
+            const elOverallRate = document.getElementById('stat-overall-rate');
+            const elOverallBar = document.getElementById('stat-overall-bar');
+            
+            if (elPresent) elPresent.textContent = data.today_present;
+            if (elAbsent) elAbsent.textContent = data.today_absent;
+            if (elRate) elRate.textContent = data.attendance_rate + '%';
+            if (elOverallRate && data.overall_rate !== undefined) {
+                elOverallRate.textContent = data.overall_rate + '%';
+            }
+            if (elOverallBar && data.overall_rate !== undefined) {
+                elOverallBar.style.width = data.overall_rate + '%';
+            }
+            
+            // Update the count badge
+            const elCountBadge = document.getElementById('pres-today-count-badge');
+            if (elCountBadge) elCountBadge.textContent = 'Present Today: ' + data.today_present;
+            
+            // Re-render student cards list
+            const container = document.getElementById('pres-students-container');
+            const toggleWrapper = document.getElementById('pres-view-all-wrapper');
+            if (!container) return;
+            
+            if (data.present_students.length === 0) {
+                container.innerHTML = `
+                    <div class="pres-empty-state" id="pres-empty-message">
+                        <i class="fas fa-user-slash" style="font-size: 2rem; margin-bottom: 10px; color: var(--text-muted);"></i>
+                        <p style="margin: 0;">No students have marked attendance yet.</p>
+                    </div>
+                `;
+                if (toggleWrapper) toggleWrapper.style.display = 'none';
+                return;
+            }
+            
+            // Map student cards
+            let cardsHtml = '';
+            data.present_students.forEach((st, index) => {
+                const hiddenClass = (!presExpanded && index >= 8) ? 'collapsed-hidden' : '';
+                cardsHtml += `
+                    <div class="pres-card ${hiddenClass}" data-reg="${st.reg_number}">
+                        <div class="pres-avatar-container">
+                            <svg class="pres-avatar" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="50" cy="50" r="48" fill="#115e59"/>
+                                <circle cx="50" cy="40" r="18" fill="#0d9488"/>
+                                <path d="M25 80 C 25 60, 75 60, 75 80" fill="#0d9488"/>
+                            </svg>
+                            <span class="pres-indicator"></span>
+                        </div>
+                        <div class="pres-name" title="${st.name}">${st.name}</div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = cardsHtml;
+            
+            // Show/hide view all button
+            if (toggleWrapper) {
+                if (data.present_students.length > 8) {
+                    toggleWrapper.style.display = 'block';
+                    const btn = document.getElementById('btn-pres-toggle-view');
+                    if (btn) {
+                        btn.textContent = presExpanded ? "Show Less" : "View All Present Students";
+                    }
+                } else {
+                    toggleWrapper.style.display = 'none';
+                }
+            }
+            
+        } catch (err) {
+            console.error("Failed to poll present students:", err);
+        }
+    }
+
+    // Poll every 5 seconds (5000ms)
+    setInterval(pollPresentStudents, 5000);
+
+    window.onClassSectionChange = function() {
+        const classSelect = document.getElementById('class-section-select');
+        if (!classSelect) return;
+        const classId = classSelect.value;
+        fetch('/api/settings/set_admin_class', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ class_id: classId })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            }
+        })
+        .catch(err => console.error("Error setting class section:", err));
+    };
+</script>
+{% endblock %}

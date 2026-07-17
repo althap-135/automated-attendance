@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Analytics & Reports Dashboard{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 24px;">
+    <h3>Attendance Analytics Overview</h3>
+    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 4px;">
+        Visualized breakdown of student presence rates across different departments, timelines, and aggregate records.
+    </p>
+</div>
+
+<!-- Charts Grid -->
+<div class="content-grid">
+    <!-- Doughnut Card (Overall) -->
+    <div class="card" style="height: 380px; display: flex; flex-direction: column;">
+        <div class="card-header">
+            <h3>Aggregate Attendance</h3>
+        </div>
+        <div style="flex-grow: 1; position: relative; height: 260px;">
+            <canvas id="overallAttendanceChart"></canvas>
+        </div>
+    </div>
+    
+    <!-- Line Card (Weekly Trend) -->
+    <div class="card" style="height: 380px; display: flex; flex-direction: column;">
+        <div class="card-header">
+            <h3>Weekly Attendance Trend</h3>
+        </div>
+        <div style="flex-grow: 1; position: relative; height: 260px;">
+            <canvas id="trendAttendanceChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="content-grid full-width">
+    <!-- Bar Card (Department-wise) -->
+    <div class="card" style="height: 420px; display: flex; flex-direction: column;">
+        <div class="card-header">
+            <h3>Department Performance Comparison</h3>
+        </div>
+        <div style="flex-grow: 1; position: relative; height: 300px;">
+            <canvas id="deptAttendanceChart"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Face Scanner{% endblock %}
+
+{% block content %}
+{% if student_count == 0 %}
+<div class="alert alert-info" style="margin: 0 auto 20px auto; max-width: 800px; display: flex; align-items: center; gap: 12px; border-radius: var(--radius-md); background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.2); color: #00f3ff; padding: 16px 20px;">
+    <i class="fas fa-info-circle" style="font-size: 1.5rem;"></i>
+    <div>
+        <h4 style="margin: 0 0 4px 0; font-weight: 700; color: white; font-size: 1rem;">No Students Registered</h4>
+        <p style="margin: 0; font-size: 0.88rem; color: var(--text-secondary);">There are no students registered yet in this class section. Please add students first to take attendance.</p>
+    </div>
+</div>
+{% endif %}
+
+<div class="content-grid" id="attendance-scanner-area">
+    <!-- Camera View Card -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Camera Scanner Feed</h3>
+            <span class="badge badge-muted" id="scan-status">
+                <i class="fas fa-circle" style="color: var(--text-muted);"></i> Idle
+            </span>
+        </div>
+        
+        <!-- Live Video feed -->
+        <div class="camera-container">
+            <video id="camera-video" muted></video>
+            <canvas id="camera-overlay"></canvas>
+            
+            <div class="scanner-ui">
+                <div class="scanner-corner corner-tl"></div>
+                <div class="scanner-corner corner-tr"></div>
+                <div class="scanner-corner corner-bl"></div>
+                <div class="scanner-corner corner-br"></div>
+            </div>
+        </div>
+        
+        <div class="grid-2" style="margin-top: 20px;">
+            <button id="btn-start-scan" class="btn-primary">
+                <i class="fas fa-play"></i> Start Scanner
+            </button>
+            <button id="btn-stop-scan" class="btn-secondary" disabled>
+                <i class="fas fa-stop"></i> Stop Scanner
+            </button>
+        </div>
+    </div>
+    
+    <!-- Real-time Scan Result Card -->
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div class="card-header">
+                <h3>Verification Panel</h3>
+            </div>
+            
+            <div id="scanner-placeholder" class="text-center text-muted" style="padding: 60px 0;">
+                <i class="fas fa-id-badge" style="font-size: 4rem; margin-bottom: 16px; color: var(--text-muted);"></i>
+                <p>Start the camera and look directly at the screen to record attendance.</p>
+            </div>
+            
+            <!-- Result Output (Initially Hidden) -->
+            <div id="scanner-result" style="display: none;">
+                <div class="scan-result-card" id="result-status-card">
+                    <div class="scan-result-details">
+                        <h4 id="result-student-name">Student Name</h4>
+                        <p id="result-student-reg">Register Number</p>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 14px;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                        <span style="color: var(--text-secondary); font-weight: 500;" id="label-dept">Department</span>
+                        <span id="result-student-dept" style="font-weight: 600;">CS</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;" id="row-year">
+                        <span style="color: var(--text-secondary); font-weight: 500;">Year</span>
+                        <span id="result-student-year" style="font-weight: 600;">3rd</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                        <span style="color: var(--text-secondary); font-weight: 500;">Time Logged</span>
+                        <span id="result-timestamp" style="font-weight: 600; color: var(--success);">10:30 AM</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding-bottom: 8px;">
+                        <span style="color: var(--text-secondary); font-weight: 500;">Confidence Score</span>
+                        <span id="result-confidence" style="font-weight: 600;">92%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="scan-alert-box" style="margin-top: 20px; display: none;" class="badge badge-warning">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="scan-alert-text">Message</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/camera.js') }}"></script>
+<script>
+    const video = document.getElementById('camera-video');
+    const overlay = document.getElementById('camera-overlay');
+    const btnStart = document.getElementById('btn-start-scan');
+    const btnStop = document.getElementById('btn-stop-scan');
+    
+    const scanStatus = document.getElementById('scan-status');
+    const placeholder = document.getElementById('scanner-placeholder');
+    const resultPanel = document.getElementById('scanner-result');
+    const alertBox = document.getElementById('scan-alert-box');
+    const alertText = document.getElementById('scan-alert-text');
+    
+    // Result fields
+    const resName = document.getElementById('result-student-name');
+    const resReg = document.getElementById('result-student-reg');
+    const resDept = document.getElementById('result-student-dept');
+    const resYear = document.getElementById('result-student-year');
+    const resTime = document.getElementById('result-timestamp');
+    const resConf = document.getElementById('result-confidence');
+    const resCard = document.getElementById('result-status-card');
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Adapt terminology based on institution type
+        const instType = "{{ current_user.institution_type or 'College' }}";
+        if (instType === 'School') {
+            const labelDept = document.getElementById('label-dept');
+            if (labelDept) labelDept.textContent = 'Class';
+            const rowYear = document.getElementById('row-year');
+            if (rowYear) rowYear.style.display = 'none';
+        }
+
+
+    });
+
+    btnStart.addEventListener('click', async () => {
+        const success = await startCamera(video);
+        if (success) {
+            btnStart.disabled = true;
+            btnStop.disabled = false;
+            
+            scanStatus.className = 'badge badge-warning';
+            scanStatus.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Scanning Active`;
+            placeholder.style.display = 'block';
+            resultPanel.style.display = 'none';
+            alertBox.style.display = 'none';
+            
+            // Start capturing frames
+            startScanning(video, overlay, 'student', handleMatch, handleNoMatch);
+        }
+    });
+
+    btnStop.addEventListener('click', () => {
+        stopCamera();
+        btnStart.disabled = false;
+        btnStop.disabled = true;
+        
+        scanStatus.className = 'badge badge-muted';
+        scanStatus.innerHTML = `<i class="fas fa-circle"></i> Idle`;
+        
+        // Clear overlay drawing
+        const ctx = overlay.getContext('2d');
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+    });
+
+    function handleMatch(data) {
+        placeholder.style.display = 'none';
+        resultPanel.style.display = 'block';
+        alertBox.style.display = 'none';
+        
+        resName.textContent = data.student.name;
+        resReg.textContent = `Reg Number: ${data.student.register_number || data.student.email}`;
+        resDept.textContent = data.student.department || data.student.department_or_class;
+        resYear.textContent = data.student.year;
+        
+        const now = new Date();
+        resTime.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        
+        const distance = data.confidence !== undefined && data.confidence !== null ? data.confidence : 45;
+        const confidencePct = Math.max(0, Math.min(100, Math.round(100 - (distance / 1.5))));
+        resConf.textContent = `${confidencePct}%`;
+        
+        if (data.already_marked) {
+            resCard.style.backgroundColor = 'var(--warning-glow)';
+            resCard.style.borderColor = 'var(--warning)';
+            resTime.style.color = 'var(--warning)';
+            resTime.textContent = "Already Marked Present";
+        } else {
+            resCard.style.backgroundColor = 'var(--success-glow)';
+            resCard.style.borderColor = 'var(--success)';
+            resTime.style.color = 'var(--success)';
+        }
+    }
+
+    function handleNoMatch(data) {
+        if (data.message === "Face detected but not recognized.") {
+            alertText.textContent = "Facial match mismatch. If you are unregistered, contact Admin.";
+            alertBox.style.display = 'flex';
+        }
+    }
+</script>
+{% endblock %}

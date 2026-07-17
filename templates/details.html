@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Details: {{ student.name }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+    <a href="{{ url_for('search_page') }}" class="btn-secondary" style="padding: 8px 16px; font-size: 0.85rem; text-decoration: none;">
+        <i class="fas fa-arrow-left"></i> Back to Search
+    </a>
+</div>
+
+<div class="content-grid">
+    <!-- Left Column: Student Information Profile & Stats -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+        <!-- Profile Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Personal Information</h3>
+                {% if student.face_registered %}
+                    <span class="badge badge-success"><i class="fas fa-check"></i> Face Enrolled</span>
+                {% else %}
+                    <span class="badge badge-danger"><i class="fas fa-times"></i> No Face Data</span>
+                {% endif %}
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 14px; font-size: 0.95rem; margin-top: 10px;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary);">Full Name</span>
+                    <strong style="color: white;">{{ student.name }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary);">Email (Reg)</span>
+                    <strong style="color: white;">{{ student.email }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary);">{% if current_user.institution_type == 'School' %}Class{% else %}Department / Class{% endif %}</span>
+                    <strong>{{ student.department_or_class }}</strong>
+                </div>
+                {% if current_user.institution_type != 'School' %}
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary);">Year of Study</span>
+                    <strong>{{ student.year or 'N/A' }}</strong>
+                </div>
+                {% endif %}
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary);">Institution</span>
+                    <strong>{{ student.institution_name }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary);">Section</span>
+                    <strong>{{ student.section }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary);">Role</span>
+                    <strong>{{ student.role.title() }}</strong>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Attendance Stats Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Attendance Statistics</h3>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h1 style="font-size: 3rem; font-weight: 700; color: {% if percentage >= 75 %}var(--success){% else %}var(--danger){% endif %};">
+                    {{ percentage }}%
+                </h1>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">Overall Attendance Percentage</p>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div style="width: 100%; height: 8px; background: rgba(255, 255, 255, 0.05); border-radius: 4px; overflow: hidden; margin-bottom: 24px;">
+                <div style="width: {{ percentage }}%; height: 100%; background: {% if percentage >= 75 %}linear-gradient(to right, #10b981, #059669){% else %}linear-gradient(to right, #ef4444, #b91c1c){% endif %};"></div>
+            </div>
+            
+            <div class="grid-2">
+                <div class="stat-card" style="padding: 12px 16px; background: rgba(255,255,255,0.01);">
+                    <div class="stat-data">
+                        <h4 style="font-size: 1.25rem;">{{ total_days }}</h4>
+                        <p style="font-size: 0.75rem;">Total Days</p>
+                    </div>
+                </div>
+                <div class="stat-card" style="padding: 12px 16px; background: rgba(255,255,255,0.01);">
+                    <div class="stat-data">
+                        <h4 style="font-size: 1.25rem; color: var(--success);">{{ present_days }}</h4>
+                        <p style="font-size: 0.75rem;">Present Days</p>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card" style="padding: 12px 16px; background: rgba(255,255,255,0.01); margin-top: 12px;">
+                <div class="stat-data">
+                    <h4 style="font-size: 1.25rem; color: var(--danger);">{{ absent_days }}</h4>
+                    <p style="font-size: 0.75rem;">Absent Days</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right Column: Student Attendance History Log -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Attendance Log History</h3>
+        </div>
+        
+        <div class="table-wrapper">
+            {% if history %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                            <th>Marked By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in history %}
+                            <tr>
+                                <td><strong>{{ record.date.strftime('%Y-%m-%d') }}</strong></td>
+                                <td>{{ record.time.strftime('%I:%M %p') if record.time else 'N/A' }}</td>
+                                <td>
+                                    {% if record.status == 'Present' %}
+                                        <span class="badge badge-present"><i class="fas fa-check-circle"></i> Present</span>
+                                    {% else %}
+                                        <span class="badge badge-absent"><i class="fas fa-times-circle"></i> Absent</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ record.marked_by }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="text-center text-muted" style="padding: 60px 0;">
+                    <i class="far fa-folder-open" style="font-size: 3rem; margin-bottom: 12px;"></i>
+                    <p>No historical attendance records found for this student.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

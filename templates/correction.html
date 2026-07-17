@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block title %}Teacher Correction Panel{% endblock %}
+
+{% block content %}
+<!-- Welcome & Finalize Bar -->
+<div class="card" style="margin-bottom: 24px; padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h3 style="margin-bottom: 4px;">Attendance Session Management</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                Authorized Teacher: <strong>{{ current_teacher_name }}</strong> | Target Date: <strong>{{ today_str }}</strong>
+            </p>
+        </div>
+        <div>
+            {% if session_status == 'Draft' %}
+                <button id="btn-submit-review" class="btn-primary" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);">
+                    <i class="fas fa-paper-plane"></i> Send to Advisor for Review
+                </button>
+            {% elif session_status == 'Submitted' %}
+                <button id="btn-approve-finalize" class="btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);">
+                    <i class="fas fa-check-double"></i> Approve & Finalize Attendance
+                </button>
+            {% else %}
+                <button class="btn-secondary" style="cursor: not-allowed; opacity: 0.7;" disabled>
+                    <i class="fas fa-lock"></i> Attendance Locked (Finalized)
+                </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Student Attendance Grid -->
+<div class="card full-width">
+    <div class="card-header">
+        <h3>Student Attendance Status (Today)</h3>
+        {% if session_status == 'Draft' %}
+            <span class="badge badge-warning">Draft</span>
+        {% elif session_status == 'Submitted' %}
+            <span class="badge badge-info">Submitted for Review</span>
+        {% else %}
+            <span class="badge badge-present"><i class="fas fa-check-circle"></i> Finalized</span>
+        {% endif %}
+    </div>
+    
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Register Number</th>
+                    <th>{% if current_user.institution_type == 'School' %}Class{% else %}Dept & Year{% endif %}</th>
+                    <th>Status</th>
+                    <th>Time Logged</th>
+                    <th>Marked By</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                    <tr>
+                        <td><strong>{{ student.name }}</strong></td>
+                        <td>{{ student.register_number }}</td>
+                        <td>{{ student.department }}{% if current_user.institution_type != 'School' %} ({{ student.year }}){% endif %}</td>
+                        <td>
+                            {% if student.status == 'Present' %}
+                                <span class="badge badge-present"><i class="fas fa-check-circle"></i> Present</span>
+                            {% elif student.status == 'Absent' %}
+                                <span class="badge badge-absent"><i class="fas fa-times-circle"></i> Absent</span>
+                            {% else %}
+                                <span class="badge badge-muted"><i class="far fa-circle"></i> Not Marked</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ student.time }}</td>
+                        <td>
+                            {% if 'Teacher' in student.marked_by %}
+                                <span style="color: var(--warning);">{{ student.marked_by }}</span>
+                            {% else %}
+                                {{ student.marked_by }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if student.status == 'Present' %}
+                                <button class="btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; cursor: not-allowed; opacity: 0.4;" disabled>
+                                    <i class="fas fa-ban"></i> Present
+                                </button>
+                            {% else %}
+                                <button class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem;" 
+                                        onclick="openCorrectionModal('{{ student.id }}', '{{ student.name }}', '{{ student.register_number }}', '{{ today_str }}', '{{ student.status }}')">
+                                    <i class="fas fa-edit"></i> Correct
+                                </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Correction Modal Dialog -->
+<div class="modal-overlay" id="correction-modal">
+    <div class="modal">
+        <div class="modal-title">Correct Attendance Status</div>
+        
+        <div style="margin-bottom: 20px; line-height: 1.5; font-size: 0.9rem; color: var(--text-secondary);">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding: 8px 0;">
+                <span>Student:</span>
+                <strong style="color: white;" id="correct-student-name">Student Name</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding: 8px 0;">
+                <span>Register Number:</span>
+                <strong style="color: white;" id="correct-student-reg">2023CS01</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding: 8px 0;">
+                <span>Session Date:</span>
+                <strong style="color: white;" id="correct-student-date">2026-06-26</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                <span>Target Status:</span>
+                <span class="badge badge-present"><i class="fas fa-check-circle"></i> Present</span>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="correction-reason">Correction Reason *</label>
+            <select class="form-input" id="correction-reason">
+                <option value="" disabled selected>-- Select Reason --</option>
+                <option value="Medical Leave">Medical Leave</option>
+                <option value="Late Arrival">Late Arrival</option>
+                <option value="Technical Error">Technical Error</option>
+                <option value="Official Permission">Official Permission</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+        
+        <div class="badge badge-warning" style="margin-bottom: 12px; display: flex; width: 100%; padding: 8px; font-size: 0.8rem; border-radius: var(--radius-sm);">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>This correction will be permanently logged in the audit trail.</span>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('correction-modal')">Cancel</button>
+            <button class="btn-primary" id="btn-submit-correction">Confirm Update</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

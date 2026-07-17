@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Search Student Profile{% endblock %}
+
+{% block content %}
+<div class="content-grid" style="grid-template-columns: 1fr;">
+    <div class="card" style="max-width: 600px; margin: 0 auto; width: 100%; padding: 40px;">
+        <div class="text-center" style="margin-bottom: 30px;">
+            <i class="fas fa-search" style="font-size: 3rem; color: var(--accent); margin-bottom: 16px;"></i>
+            <h3 style="margin-bottom: 8px;">Student Information Lookup</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                Search student details by entering their Register Number or Full Name.
+            </p>
+        </div>
+        
+        <div class="form-group" style="position: relative;">
+            <label for="student-search-input">Search Input</label>
+            <input type="text" class="form-input" id="student-search-input" placeholder="e.g. 2023CS01 or Alice..." autocomplete="off" style="font-size: 1.1rem; padding: 14px 20px;">
+            
+            <!-- Dynamic Auto-suggestions Dropdown -->
+            <ul class="search-results" id="search-suggest-list" style="position: absolute; width: 100%; z-index: 100; box-shadow: var(--shadow);">
+                <!-- Populated dynamically via JS -->
+            </ul>
+        </div>
+        
+        <div style="margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.85rem;">
+            <h4 style="color: var(--text-secondary); margin-bottom: 12px; font-weight: 600;">Search Tips:</h4>
+            <ul style="padding-left: 18px; display: flex; flex-direction: column; gap: 8px;">
+                <li>Search terms are case-insensitive.</li>
+                <li>As you type, suggestions will automatically load below the input.</li>
+                <li>Clicking on a suggestion will immediately redirect you to their comprehensive profile and attendance records.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

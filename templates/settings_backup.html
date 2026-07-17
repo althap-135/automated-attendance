@@ -1,0 +1,781 @@
+{% extends 'base.html' %}
+
+{% block title %}System Management & Settings{% endblock %}
+
+{% block content %}
+<style>
+    .settings-app-container {
+        display: grid;
+        grid-template-columns: 290px 1fr;
+        gap: 30px;
+        align-items: start;
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .settings-menu-card {
+        background: var(--bg-card);
+        backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 24px;
+        box-shadow: var(--shadow);
+    }
+
+    .settings-menu-card h3 {
+        font-size: 1.15rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 12px;
+    }
+
+    .settings-menu-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .settings-menu-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        transition: var(--transition);
+        border: 1px solid transparent;
+        background: rgba(255, 255, 255, 0.01);
+    }
+
+    .settings-menu-item:hover {
+        background: rgba(255, 255, 255, 0.04);
+        transform: translateX(4px);
+        border-color: var(--border-color);
+    }
+
+    .settings-menu-item.active {
+        background: var(--accent-gradient);
+        color: white;
+        box-shadow: 0 4px 15px var(--accent-glow);
+    }
+
+    .settings-menu-item.active .item-num {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+    .settings-menu-item.active i {
+        color: white;
+    }
+
+    .item-num {
+        width: 24px;
+        height: 24px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-right: 12px;
+    }
+
+    .item-text {
+        flex-grow: 1;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    .settings-menu-item i {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        transition: var(--transition);
+    }
+
+    .settings-panel {
+        display: none;
+        width: 100%;
+    }
+
+    .settings-panel.active {
+        display: block;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 990px) {
+        .settings-app-container {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="settings-app-container">
+    <!-- Left Menu List -->
+    <div class="settings-menu-card">
+        <h3>System Settings</h3>
+        <ul class="settings-menu-list">
+            <li class="settings-menu-item active" data-target="panel-seeding">
+                <span class="item-num">1</span>
+                <span class="item-text">Setup & Seeding</span>
+                <i class="fas fa-chevron-right"></i>
+            </li>
+            <li class="settings-menu-item" data-target="panel-ai">
+                <span class="item-num">2</span>
+                <span class="item-text">AI Configuration</span>
+                <i class="fas fa-chevron-right"></i>
+            </li>
+            <li class="settings-menu-item" data-target="panel-add-user">
+                <span class="item-num">3</span>
+                <span class="item-text">Add User Record</span>
+                <i class="fas fa-chevron-right"></i>
+            </li>
+            <li class="settings-menu-item" data-target="panel-kiosk">
+                <span class="item-num">4</span>
+                <span class="item-text">Face Registration Kiosk</span>
+                <i class="fas fa-chevron-right"></i>
+            </li>
+            <li class="settings-menu-item" data-target="panel-directory">
+                <span class="item-num">5</span>
+                <span class="item-text">Face Directory</span>
+                <i class="fas fa-chevron-right"></i>
+            </li>
+            <li class="settings-menu-item" data-target="panel-logs">
+                <span class="item-num">6</span>
+                <span class="item-text">Dispatch Logs</span>
+                <i class="fas fa-chevron-right"></i>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Right Panel Content Area -->
+    <div class="settings-content-panels">
+        <!-- Panel 1: Seeding -->
+        <div class="settings-panel active" id="panel-seeding">
+            <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div class="card-header">
+                        <h3>System Setup & Seeding</h3>
+                    </div>
+                    <div style="line-height: 1.6; color: var(--text-secondary); margin-bottom: 24px; font-size: 0.9rem;">
+                        <p style="margin-bottom: 12px;">
+                            If the database is empty, seed it to populate 5 students and 2 teachers:
+                        </p>
+                        <ul>
+                            <li><strong>Dr. Sarah Connor</strong> (Teacher, ID: T001)</li>
+                            <li><strong>Prof. Charles Xavier</strong> (Teacher, ID: T002)</li>
+                            <li>Students: Alice (2023CS01), Bob (2023CS02), Charlie (2023EC01), Diana (2023ME01), Ethan (2023IT01)</li>
+                        </ul>
+                    </div>
+                </div>
+                <button id="btn-seed-db" class="btn-primary" style="width: 100%;">
+                    <i class="fas fa-database"></i> Seed Database with Samples
+                </button>
+            </div>
+        </div>
+
+        <!-- Panel 2: AI Config -->
+        <div class="settings-panel" id="panel-ai">
+            <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div class="card-header">
+                        <h3>AI Assistant Configuration</h3>
+                        <span class="badge {% if ai_key %}badge-success{% else %}badge-warning{% endif %}">
+                            {% if ai_key %}Active ({{ ai_provider.upper() }}){% else %}Using Fallback{% endif %}
+                        </span>
+                    </div>
+                    <div style="line-height: 1.5; color: var(--text-secondary); margin-bottom: 20px; font-size: 0.85rem;">
+                        <p>
+                            Provide your own API Key to get real-time dynamic chat replies. You can get a free Gemini API key on Google AI Studio.
+                        </p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ai-provider-select">Select Provider</label>
+                        <select class="form-input" id="ai-provider-select">
+                            <option value="openai" {% if ai_provider == 'openai' %}selected{% endif %}>OpenAI (GPT-4o-mini)</option>
+                            <option value="gemini" {% if ai_provider == 'gemini' %}selected{% endif %}>Google Gemini (1.5-Flash)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ai-key-input">API Key</label>
+                        <input type="password" class="form-input" id="ai-key-input" placeholder="Paste your API key here" value="{{ ai_key }}">
+                    </div>
+                </div>
+                <button id="btn-save-ai-config" class="btn-primary" style="width: 100%; margin-top: 8px;">
+                    <i class="fas fa-save"></i> Save AI Config
+                </button>
+            </div>
+        </div>
+
+        <!-- Panel 3: Add User -->
+        <div class="settings-panel" id="panel-add-user">
+            <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div class="card-header">
+                        <h3>Add Student / Teacher Record</h3>
+                    </div>
+                    <div class="form-group">
+                        <label for="add-role-select">Select Role</label>
+                        <select class="form-input" id="add-role-select">
+                            <option value="student">Student</option>
+                            <option value="teacher">Teacher</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="add-name">Full Name *</label>
+                        <input type="text" class="form-input" id="add-name" placeholder="e.g. John Doe">
+                    </div>
+
+                    <!-- Student Specific Fields -->
+                    <div id="add-student-fields">
+                        <div class="form-group">
+                            <label for="add-reg-num">Register Number *</label>
+                            <input type="text" class="form-input" id="add-reg-num" placeholder="e.g. alice@college.edu">
+                        </div>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="add-mobile">Mobile Number (Optional)</label>
+                                <input type="text" class="form-input" id="add-mobile" placeholder="e.g. +919876543210">
+                            </div>
+                            <div class="form-group">
+                                <label for="add-parent-mobile">Parent Mobile Number *</label>
+                                <input type="text" class="form-input" id="add-parent-mobile" placeholder="e.g. +919876543211">
+                            </div>
+                        </div>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="add-dept">Department *</label>
+                                <input type="text" class="form-input" id="add-dept" placeholder="e.g. Computer Science">
+                            </div>
+                            <div class="form-group">
+                                <label for="add-year">Year *</label>
+                                <select class="form-input" id="add-year">
+                                    <option value="1st Year">1st Year</option>
+                                    <option value="2nd Year">2nd Year</option>
+                                    <option value="3rd Year">3rd Year</option>
+                                    <option value="4th Year">4th Year</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="add-section">Section *</label>
+                            <input type="text" class="form-input" id="add-section" placeholder="e.g. A" value="A">
+                        </div>
+                    </div>
+
+                    <!-- Teacher Specific Fields (Hidden by Default) -->
+                    <div id="add-teacher-fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="add-teacher-id">Email (ID) *</label>
+                            <input type="text" class="form-input" id="add-teacher-id" placeholder="e.g. teacher@college.edu">
+                        </div>
+                        <div class="form-group">
+                            <label for="add-teacher-email">Subject / Spec *</label>
+                            <input type="text" class="form-input" id="add-teacher-email" placeholder="e.g. Computer Science" value="Computer Science">
+                        </div>
+                    </div>
+                </div>
+                <button id="btn-save-user-record" class="btn-primary" style="width: 100%; margin-top: 10px;">
+                    <i class="fas fa-save"></i> Save User Record
+                </button>
+            </div>
+        </div>
+
+        <!-- Panel 4: Face Kiosk -->
+        <div class="settings-panel" id="panel-kiosk">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Face Registration Kiosk</h3>
+                    <span class="badge badge-muted" id="enroll-cam-status">Camera Off</span>
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <div class="form-group">
+                        <label for="enroll-user-select">Select User to Enroll Face</label>
+                        <select class="form-input" id="enroll-user-select">
+                            <option value="" disabled selected>-- Choose User --</option>
+                            <optgroup label="Teachers">
+                                {% for t in teachers %}
+                                    <option value="teacher_{{ t.id }}" {% if t.face_registered %}style="color: var(--success); font-weight:600;"{% endif %}>
+                                        [Teacher] {{ t.name }} (Email: {{ t.email }}) {% if t.face_registered %}✓{% endif %}
+                                    </option>
+                                {% endfor %}
+                            </optgroup>
+                            <optgroup label="Students">
+                                {% for s in students %}
+                                    <option value="student_{{ s.id }}" {% if s.face_registered %}style="color: var(--success); font-weight:600;"{% endif %}>
+                                        [Student] {{ s.name }} (Email: {{ s.email }}) {% if s.face_registered %}✓{% endif %}
+                                    </option>
+                                {% endfor %}
+                            </optgroup>
+                        </select>
+                    </div>
+                    
+                    <!-- Camera element -->
+                    <div id="enroll-camera-area" style="display: none;">
+                        <div class="camera-container" style="max-width: 320px; aspect-ratio: 4/3; margin-bottom: 14px;">
+                            <video id="enroll-video" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover;"></video>
+                        </div>
+                        
+                        <div class="snapshot-progress">
+                            <div class="snapshot-dot" id="dot-1"></div>
+                            <div class="snapshot-dot" id="dot-2"></div>
+                            <div class="snapshot-dot" id="dot-3"></div>
+                            <div class="snapshot-dot" id="dot-4"></div>
+                            <div class="snapshot-dot" id="dot-5"></div>
+                        </div>
+                        
+                        <div class="text-center text-muted" style="font-size: 0.8rem; margin: 10px 0;">
+                            Please shift your face slightly between snapshots (neutral, tilt left, tilt right, smile, look up).
+                        </div>
+                        
+                        <button id="btn-capture-snapshot" class="btn-primary" style="width: 100%; margin-top: 8px;">
+                            <i class="fas fa-camera-retro"></i> Capture Snapshot <span id="snapshot-count-text">(1/5)</span>
+                        </button>
+                    </div>
+                    
+                    <button id="btn-start-enroll-camera" class="btn-secondary" style="width: 100%; margin-top: 10px;" disabled>
+                        <i class="fas fa-video"></i> Start Registration Camera
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel 5: Directory -->
+        <div class="settings-panel" id="panel-directory">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Face Registration Directory</h3>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Role</th>
+                                <th>Name</th>
+                                <th>Identifier</th>
+                                <th>Facial Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Teachers list -->
+                            {% for t in teachers %}
+                                <tr>
+                                    <td>Teacher</td>
+                                    <td><strong>{{ t.name }}</strong></td>
+                                    <td>{{ t.email }}</td>
+                                    <td>
+                                        {% if t.face_registered %}
+                                            <span class="badge badge-success">Enrolled</span>
+                                        {% else %}
+                                            <span class="badge badge-danger">Unregistered</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="display: flex; gap: 8px;">
+                                        {% if t.face_registered %}
+                                            <button class="btn-secondary" style="padding: 4px 10px; font-size: 0.75rem; border-color: var(--warning); color: var(--warning);" 
+                                                     onclick="deleteFace('teacher', '{{ t.id }}', '{{ t.name }}')">
+                                                <i class="fas fa-user-minus"></i> Delete Face
+                                            </button>
+                                        {% endif %}
+                                        <button class="btn-secondary" style="padding: 4px 10px; font-size: 0.75rem; border-color: var(--danger); color: var(--danger);" 
+                                                 onclick="deleteUser('teacher', '{{ t.id }}', '{{ t.name }}')">
+                                            <i class="fas fa-trash-alt"></i> Delete User
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            <!-- Students list -->
+                            {% for s in students %}
+                                <tr>
+                                    <td>Student</td>
+                                    <td><strong>{{ s.name }}</strong></td>
+                                    <td>{{ s.email }}</td>
+                                    <td>
+                                        {% if s.face_registered %}
+                                            <span class="badge badge-success">Enrolled</span>
+                                        {% else %}
+                                            <span class="badge badge-danger">Unregistered</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="display: flex; gap: 8px;">
+                                        {% if s.face_registered %}
+                                            <button class="btn-secondary" style="padding: 4px 10px; font-size: 0.75rem; border-color: var(--warning); color: var(--warning);" 
+                                                     onclick="deleteFace('student', '{{ s.id }}', '{{ s.name }}')">
+                                                <i class="fas fa-user-minus"></i> Delete Face
+                                            </button>
+                                        {% endif %}
+                                        <button class="btn-secondary" style="padding: 4px 10px; font-size: 0.75rem; border-color: var(--danger); color: var(--danger);" 
+                                                 onclick="deleteUser('student', '{{ s.id }}', '{{ s.name }}')">
+                                            <i class="fas fa-trash-alt"></i> Delete User
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel 6: Notification Logs -->
+        <div class="settings-panel" id="panel-logs">
+            <div class="card">
+                <div class="card-header">
+                    <h3>WhatsApp & Email Notifications Dispatch Log</h3>
+                    <span class="badge badge-warning">Simulation Live</span>
+                </div>
+                <div class="table-wrapper">
+                    {% if notification_logs %}
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Recipient</th>
+                                    <th>Target Contact</th>
+                                    <th>Alert Type</th>
+                                    <th>Channel</th>
+                                    <th>Delivery status</th>
+                                    <th>Timestamp</th>
+                                    <th>Message Content</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in notification_logs %}
+                                    <tr>
+                                        <td><strong>{{ log.recipient_name }}</strong></td>
+                                        <td>{{ log.recipient_contact }}</td>
+                                        <td><span style="font-size: 0.8rem; font-weight:600;">{{ log.type }}</span></td>
+                                        <td>
+                                            {% if log.channel == 'WhatsApp' %}
+                                                <span style="color: #25d366; font-weight: 600;"><i class="fab fa-whatsapp"></i> WhatsApp</span>
+                                            {% else %}
+                                                <span style="color: #3b82f6; font-weight: 600;"><i class="far fa-envelope"></i> Email</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if log.status == 'Simulated' %}
+                                                <span class="badge badge-warning" style="padding: 2px 8px; font-size:0.75rem;">Simulated</span>
+                                            {% elif log.status == 'Sent' %}
+                                                <span class="badge badge-present" style="padding: 2px 8px; font-size:0.75rem;">Sent</span>
+                                            {% else %}
+                                                <span class="badge badge-absent" style="padding: 2px 8px; font-size:0.75rem;">{{ log.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="font-size: 0.8rem; color: var(--text-secondary);">{{ log.timestamp.strftime('%H:%M:%S (%b %d)') }}</td>
+                                        <td style="max-width: 260px; font-size: 0.75rem; color: var(--text-secondary); white-space: pre-wrap; font-family: monospace; border: 1px solid var(--border-color); padding: 8px; border-radius: var(--radius-sm); background: rgba(0,0,0,0.2);">{{ log.message }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="text-center text-muted" style="padding: 60px 0;">
+                            No notifications sent yet today. Mark final attendance to send reports.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/camera.js') }}"></script>
+<script>
+    // Tab switching logic
+    document.querySelectorAll('.settings-menu-item').forEach(item => {
+        item.addEventListener('click', () => {
+            document.querySelectorAll('.settings-menu-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.settings-panel').forEach(el => el.classList.remove('active'));
+            
+            item.classList.add('active');
+            document.getElementById(item.getAttribute('data-target')).classList.add('active');
+        });
+    });
+
+    const userSelect = document.getElementById('enroll-user-select');
+    const btnStartCamera = document.getElementById('btn-start-enroll-camera');
+    const cameraArea = document.getElementById('enroll-camera-area');
+    const video = document.getElementById('enroll-video');
+    const btnCapture = document.getElementById('btn-capture-snapshot');
+    const camStatus = document.getElementById('enroll-cam-status');
+    const snapshotCountText = document.getElementById('snapshot-count-text');
+    
+    let activeEnrollUser = null; // { type, id }
+    let snapshotIndex = 1;
+
+    userSelect.addEventListener('change', () => {
+        const val = userSelect.value;
+        if (!val) {
+            btnStartCamera.disabled = true;
+            return;
+        }
+        
+        const [type, id] = val.split('_');
+        activeEnrollUser = { type, id: parseInt(id) };
+        btnStartCamera.disabled = false;
+        
+        // Reset states
+        cameraArea.style.display = 'none';
+        btnStartCamera.style.display = 'block';
+        resetDots();
+        snapshotIndex = 1;
+        snapshotCountText.textContent = `(1/5)`;
+    });
+
+    btnStartCamera.addEventListener('click', async () => {
+        const success = await startCamera(video);
+        if (success) {
+            btnStartCamera.style.display = 'none';
+            cameraArea.style.display = 'block';
+            camStatus.className = 'badge badge-success';
+            camStatus.textContent = 'Camera Streaming';
+            
+            resetDots();
+            document.getElementById('dot-1').classList.add('active');
+        }
+    });
+
+    btnCapture.addEventListener('click', async () => {
+        if (!activeEnrollUser) return;
+        
+        btnCapture.disabled = true;
+        btnCapture.textContent = "Capturing...";
+        
+        const res = await captureEnrollmentSnapshot(video, activeEnrollUser.id, activeEnrollUser.type, snapshotIndex);
+        
+        if (res.success) {
+            // Update dots
+            const dot = document.getElementById(`dot-${snapshotIndex}`);
+            if (dot) {
+                dot.classList.remove('active');
+                dot.classList.add('completed');
+            }
+            
+            snapshotIndex++;
+            
+            if (snapshotIndex <= 5) {
+                // Move to next dot
+                const nextDot = document.getElementById(`dot-${snapshotIndex}`);
+                if (nextDot) nextDot.classList.add('active');
+                
+                snapshotCountText.textContent = `(${snapshotIndex}/5)`;
+                btnCapture.disabled = false;
+                btnCapture.innerHTML = `<i class="fas fa-camera-retro"></i> Capture Snapshot <span id="snapshot-count-text">(${snapshotIndex}/5)</span>`;
+            } else {
+                // Done enrolling 5 snapshots
+                showToast("Enrollment successful! Model has been trained.", "success");
+                stopCamera();
+                setTimeout(() => window.location.reload(), 2000);
+            }
+        } else {
+            showToast(`Error capturing: ${res.message}`, "error");
+            btnCapture.disabled = false;
+            btnCapture.innerHTML = `<i class="fas fa-camera-retro"></i> Capture Snapshot <span id="snapshot-count-text">(${snapshotIndex}/5)</span>`;
+        }
+    });
+
+    function resetDots() {
+        for (let i = 1; i <= 5; i++) {
+            const dot = document.getElementById(`dot-${i}`);
+            if (dot) {
+                dot.className = 'snapshot-dot';
+            }
+        }
+    }
+    
+    async function deleteFace(userType, userId, userName) {
+        if (!confirm(`Are you sure you want to delete face enrollment records for ${userName}?`)) return;
+        
+        try {
+            const res = await fetch('/api/settings/delete_face', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_type: userType,
+                    user_id: parseInt(userId)
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, "success");
+                setTimeout(() => window.location.reload(), 2000);
+            } else {
+                showToast(data.message, "error");
+            }
+        } catch (err) {
+            console.error(err);
+            showToast("Failed to delete facial profile.", "error");
+        }
+    }
+
+    async function deleteUser(role, userId, userName) {
+        if (!confirm(`Are you sure you want to completely delete the record for ${userName}? This will also delete all associated face models and attendance records.`)) {
+            return;
+        }
+        
+        try {
+            const res = await fetch('/api/settings/delete_user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role, user_id: parseInt(userId) })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, "success");
+                setTimeout(() => window.location.reload(), 2000);
+            } else {
+                showToast(data.message, "error");
+            }
+        } catch (err) {
+            console.error(err);
+            showToast("Failed to delete user record.", "error");
+        }
+    }
+
+    // Toggle fields based on role select
+    const addRoleSelect = document.getElementById('add-role-select');
+    const studentFields = document.getElementById('add-student-fields');
+    const teacherFields = document.getElementById('add-teacher-fields');
+    const btnSaveUser = document.getElementById('btn-save-user-record');
+
+    if (addRoleSelect) {
+        addRoleSelect.addEventListener('change', () => {
+            const role = addRoleSelect.value;
+            if (role === 'student') {
+                studentFields.style.display = 'block';
+                teacherFields.style.display = 'none';
+            } else {
+                studentFields.style.display = 'none';
+                teacherFields.style.display = 'block';
+            }
+        });
+    }
+
+    if (btnSaveUser) {
+        btnSaveUser.addEventListener('click', async () => {
+            const role = addRoleSelect.value;
+            const name = document.getElementById('add-name').value.trim();
+            
+            if (!name) {
+                showToast("Please enter a name.", "error");
+                return;
+            }
+
+            let payload = { role, name };
+
+            if (role === 'student') {
+                const register_number = document.getElementById('add-reg-num').value.trim();
+                const mobile_number = document.getElementById('add-mobile').value.trim();
+                const parent_mobile_number = document.getElementById('add-parent-mobile').value.trim();
+                const department = document.getElementById('add-dept').value.trim();
+                const year = document.getElementById('add-year').value;
+                const section = document.getElementById('add-section').value.trim();
+
+                if (!register_number || !department || !year || !section || !parent_mobile_number) {
+                    showToast("Please fill in all required student fields (Register Number, Parent Mobile Number, Dept, Year, Section are required).", "error");
+                    return;
+                }
+
+                payload = { 
+                    ...payload, 
+                    register_number, 
+                    mobile_number,
+                    parent_mobile_number,
+                    department, 
+                    year, 
+                    section
+                };
+            } else {
+                const teacher_id = document.getElementById('add-teacher-id').value.trim();
+                const email = document.getElementById('add-teacher-email').value.trim();
+
+                if (!teacher_id || !email) {
+                    showToast("Please fill in all required teacher fields.", "error");
+                    return;
+                }
+
+                payload = { ...payload, teacher_id, email };
+            }
+
+            btnSaveUser.disabled = true;
+            btnSaveUser.textContent = "Saving...";
+
+            try {
+                const res = await fetch('/api/settings/add_user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showToast(data.message, "success");
+                    setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    showToast(`Error: ${data.message}`, "error");
+                    btnSaveUser.disabled = false;
+                    btnSaveUser.innerHTML = `<i class="fas fa-save"></i> Save User Record`;
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to save user record.", "error");
+                btnSaveUser.disabled = false;
+                btnSaveUser.innerHTML = `<i class="fas fa-save"></i> Save User Record`;
+            }
+        });
+    }
+
+    // AI Configuration Save Handler
+    const btnSaveAiConfig = document.getElementById('btn-save-ai-config');
+    if (btnSaveAiConfig) {
+        btnSaveAiConfig.addEventListener('click', async () => {
+            const provider = document.getElementById('ai-provider-select').value;
+            const api_key = document.getElementById('ai-key-input').value.trim();
+            
+            if (!api_key) {
+                showToast("Please enter a valid API key.", "error");
+                return;
+            }
+            
+            btnSaveAiConfig.disabled = true;
+            btnSaveAiConfig.textContent = "Saving...";
+            
+            try {
+                const res = await fetch('/api/settings/save_ai_config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ provider, api_key })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showToast(data.message, "success");
+                    setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    showToast(`Error: ${data.message}`, "error");
+                    btnSaveAiConfig.disabled = false;
+                    btnSaveAiConfig.innerHTML = `<i class="fas fa-save"></i> Save AI Config`;
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to save AI configuration.", "error");
+                btnSaveAiConfig.disabled = false;
+                btnSaveAiConfig.innerHTML = `<i class="fas fa-save"></i> Save AI Config`;
+            }
+        });
+    }
+</script>
+{% endblock %}

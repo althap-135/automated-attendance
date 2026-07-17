@@ -1,0 +1,13 @@
+.env
+__pycache__/
+*.db
+.pytest_cache/
+static/faces/students/*
+static/faces/teachers/*
+!static/faces/students/.gitkeep
+!static/faces/teachers/.gitkeep
+
+portable-git/
+portable-git.exe
+
+config.json

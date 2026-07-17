@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}Audit Trail & Attendance History{% endblock %}
+
+{% block content %}
+<!-- Tab Switcher Navigation -->
+<div style="display: flex; gap: 16px; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+    <button class="btn-primary" id="tab-btn-history" style="padding: 10px 20px; font-size: 0.9rem;">
+        <i class="fas fa-history"></i> Attendance Logs
+    </button>
+    <button class="btn-secondary" id="tab-btn-audit" style="padding: 10px 20px; font-size: 0.9rem;">
+        <i class="fas fa-file-signature"></i> Teacher Audit Trail
+    </button>
+</div>
+
+<!-- Tab 1: Global Attendance History (Default Active) -->
+<div class="card full-width" id="tab-content-history">
+    <div class="card-header">
+        <h3>Master Attendance Records</h3>
+        <span class="badge badge-muted">View Mode</span>
+    </div>
+    
+    <div class="table-wrapper">
+        {% if records %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Student Name</th>
+                        <th>Register Number</th>
+                        <th>Dept & Year</th>
+                        <th>Status</th>
+                        <th>Time Logged</th>
+                        <th>Marked By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                        <tr>
+                            <td><strong>{{ record.date.strftime('%Y-%m-%d') }}</strong></td>
+                            <td><strong>{{ record.student_name }}</strong></td>
+                            <td>{{ record.register_number }}</td>
+                            <td>{{ record.department }} ({{ record.year }})</td>
+                            <td>
+                                {% if record.status == 'Present' %}
+                                    <span class="badge badge-present"><i class="fas fa-check-circle"></i> Present</span>
+                                {% else %}
+                                    <span class="badge badge-absent"><i class="fas fa-times-circle"></i> Absent</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ record.time.strftime('%I:%M %p') }}</td>
+                            <td>{{ record.marked_by }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="text-center text-muted" style="padding: 60px 0;">
+                No attendance logs found in the database.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Tab 2: Teacher Audit Trail (Hidden by Default) -->
+<div class="card full-width" id="tab-content-audit" style="display: none;">
+    <div class="card-header">
+        <h3>System Modification Logs</h3>
+        <span class="badge badge-danger"><i class="fas fa-shield-alt"></i> Secure Trail</span>
+    </div>
+    
+    <div class="table-wrapper">
+        {% if audit_logs %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Student Details</th>
+                        <th>Authorized Teacher</th>
+                        <th>Previous</th>
+                        <th>Updated</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in audit_logs %}
+                        <tr>
+                            <td><strong style="color: var(--text-secondary);">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</strong></td>
+                            <td>
+                                <strong>{{ log.student_name }}</strong><br>
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">Reg: {{ log.register_number }}</span>
+                            </td>
+                            <td>
+                                <strong>{{ log.teacher_name }}</strong><br>
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">ID: {{ log.teacher_id }}</span>
+                            </td>
+                            <td><span class="badge badge-absent">{{ log.previous_status }}</span></td>
+                            <td><span class="badge badge-present">{{ log.updated_status }}</span></td>
+                            <td>
+                                <span class="badge badge-warning" style="font-weight: 500;">{{ log.reason }}</span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="text-center text-muted" style="padding: 60px 0;">
+                No correction audit logs recorded.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const btnHistory = document.getElementById('tab-btn-history');
+    const btnAudit = document.getElementById('tab-btn-audit');
+    const contentHistory = document.getElementById('tab-content-history');
+    const contentAudit = document.getElementById('tab-content-audit');
+
+    btnHistory.addEventListener('click', () => {
+        // Toggle Buttons
+        btnHistory.className = 'btn-primary';
+        btnAudit.className = 'btn-secondary';
+        
+        // Toggle Content
+        contentHistory.style.display = 'block';
+        contentAudit.style.display = 'none';
+    });
+
+    btnAudit.addEventListener('click', () => {
+        // Toggle Buttons
+        btnHistory.className = 'btn-secondary';
+        btnAudit.className = 'btn-primary';
+        
+        // Toggle Content
+        contentHistory.style.display = 'none';
+        contentAudit.style.display = 'block';
+    });
+</script>
+{% endblock %}

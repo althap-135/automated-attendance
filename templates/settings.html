@@ -1,0 +1,1561 @@
+{% extends 'base.html' %}
+
+{% block title %}System Management & Settings{% endblock %}
+
+{% block content %}
+<style>
+    .settings-app-container {
+        display: grid;
+        grid-template-columns: 290px 1fr;
+        gap: 30px;
+        align-items: start;
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .settings-menu-card {
+        background: var(--bg-card);
+        backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 24px;
+        box-shadow: var(--shadow);
+    }
+
+    .settings-menu-card h3 {
+        font-size: 1.15rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 12px;
+    }
+
+    .settings-menu-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .settings-menu-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        transition: var(--transition);
+        border: 1px solid transparent;
+        background: rgba(255, 255, 255, 0.01);
+    }
+
+    .settings-menu-item:hover {
+        background: rgba(255, 255, 255, 0.04);
+        transform: translateX(4px);
+        border-color: var(--border-color);
+    }
+
+    .settings-menu-item.active {
+        background: var(--accent-gradient);
+        color: white;
+        box-shadow: 0 4px 15px var(--accent-glow);
+    }
+
+    .settings-menu-item.active .item-num {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+    .settings-menu-item.active i {
+        color: white;
+    }
+
+    .item-num {
+        width: 24px;
+        height: 24px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-right: 12px;
+    }
+
+    .item-text {
+        flex-grow: 1;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    .settings-menu-item i {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        transition: var(--transition);
+    }
+
+    .settings-panel {
+        display: none;
+        width: 100%;
+    }
+
+    .settings-panel.active {
+        display: block;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 990px) {
+        .settings-app-container {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="settings-app-container">
+    <!-- Left Menu List -->
+    <div class="settings-menu-card">
+        <h3>System Settings</h3>
+        <ul class="settings-menu-list">
+            <li class="settings-menu-item active" data-target="panel-ai">
+                <span class="item-num">1</span>
+                <span class="item-text">AI Configuration</span>
+                <i class="fas fa-chevron-right"></i>
+            </li>
+            <li class="settings-menu-item" data-target="panel-directory">
+                <span class="item-num">2</span>
+                <span class="item-text">Face Directory</span>
+                <i class="fas fa-chevron-right"></i>
+            </li>
+            <li class="settings-menu-item" data-target="panel-logs">
+                <span class="item-num">3</span>
+                <span class="item-text">Dispatch Logs</span>
+                <i class="fas fa-chevron-right"></i>
+            </li>
+            <li class="settings-menu-item" data-target="panel-advisors">
+                <span class="item-num">4</span>
+                <span class="item-text">Advisor Mapping</span>
+                <i class="fas fa-chevron-right"></i>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Right Panel Content Area -->
+    <div class="settings-content-panels">
+        <!-- Panel 2: AI Config -->
+        <div class="settings-panel active" id="panel-ai">
+            <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div class="card-header">
+                        <h3>AI Assistant Configuration</h3>
+                        <span class="badge {% if ai_key %}badge-success{% else %}badge-warning{% endif %}">
+                            {% if ai_key %}Active ({{ ai_provider.upper() }}){% else %}Using Fallback{% endif %}
+                        </span>
+                    </div>
+                    <div style="line-height: 1.5; color: var(--text-secondary); margin-bottom: 20px; font-size: 0.85rem;">
+                        <p>
+                            Provide your own API Key to get real-time dynamic chat replies. You can get a free Gemini API key on Google AI Studio.
+                        </p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ai-provider-select">Select Provider</label>
+                        <select class="form-input" id="ai-provider-select">
+                            <option value="openai" {% if ai_provider == 'openai' %}selected{% endif %}>OpenAI (GPT-4o-mini)</option>
+                            <option value="gemini" {% if ai_provider == 'gemini' %}selected{% endif %}>Google Gemini (1.5-Flash)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ai-key-input">API Key</label>
+                        <input type="password" class="form-input" id="ai-key-input" placeholder="Paste your API key here" value="{{ ai_key }}">
+                    </div>
+                </div>
+                <button id="btn-save-ai-config" class="btn-primary" style="width: 100%; margin-top: 8px;">
+                    <i class="fas fa-save"></i> Save AI Config
+                </button>
+            </div>
+        </div>
+
+        <!-- Custom Registration & Kiosk Modals -->
+        <!-- 1. Add New User Modal -->
+        <div class="custom-modal" id="modal-add-user" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 18, 42, 0.7); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+            <div class="card" style="width: 100%; max-width: 500px; margin: 20px; max-height: 90vh; overflow-y: auto; border: 1px solid rgba(255,255,255,0.08); background: #0f172a; border-radius: var(--radius-lg); padding: 24px;">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px; margin-bottom: 16px;">
+                    <h3 style="margin: 0; color: white;">Add New User</h3>
+                    <button onclick="closeAddUserModal()" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.25rem; transition: var(--transition);"><i class="fas fa-times"></i></button>
+                </div>
+                
+                <!-- Error Message Container inside modal -->
+                <div id="modal-error-container" style="display: none; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; border-radius: var(--radius-md); padding: 12px; margin-bottom: 16px; font-size: 0.85rem;">
+                    <i class="fas fa-exclamation-circle" style="margin-right: 6px;"></i> <span id="modal-error-text"></span>
+                </div>
+                
+                <div>
+                    <!-- Select Role -->
+                    <div class="form-group">
+                        <label for="add-role-select">Select Role *</label>
+                        <select class="form-input" id="add-role-select" onchange="toggleFormRoleFields()">
+                            <option value="student" selected>Student</option>
+                            <option value="teacher">Teacher</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="add-name">Full Name *</label>
+                        <input type="text" class="form-input" id="add-name" placeholder="e.g. John Doe">
+                    </div>
+
+                    <!-- Student Fields -->
+                    <div id="add-student-fields">
+                        <div class="form-group">
+                            <label for="add-reg-num">Register Number *</label>
+                            <input type="text" class="form-input" id="add-reg-num" placeholder="e.g. 23EC001">
+                        </div>
+                        <div class="form-group">
+                            <label for="add-student-email">Email Address *</label>
+                            <input type="email" class="form-input" id="add-student-email" placeholder="e.g. john@college.edu">
+                        </div>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="add-mobile">Mobile Number (Optional)</label>
+                                <input type="text" class="form-input" id="add-mobile" placeholder="e.g. +919876543210">
+                            </div>
+                            <div class="form-group">
+                                <label for="add-parent-mobile">Parent WhatsApp Number *</label>
+                                <input type="text" class="form-input" id="add-parent-mobile" placeholder="e.g. +919876543211">
+                            </div>
+                        </div>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="add-dept">
+                                    {% if current_user.institution_type == "School" %}Class / Grade{% else %}Department{% endif %} *
+                                </label>
+                                <input type="text" class="form-input" id="add-dept" placeholder="{% if current_user.institution_type == 'School' %}e.g. 10th Grade{% else %}e.g. ECE{% endif %}">
+                            </div>
+                            <div class="form-group">
+                                <label for="add-year">
+                                    {% if current_user.institution_type == "School" %}Year (N/A){% else %}Year{% endif %} *
+                                </label>
+                                <select class="form-input" id="add-year">
+                                    {% if current_user.institution_type == "School" %}
+                                    <option value="">-- N/A (School) --</option>
+                                    {% else %}
+                                    <option value="">-- Select Year --</option>
+                                    <option value="1st Year">1st Year</option>
+                                    <option value="2nd Year">2nd Year</option>
+                                    <option value="3rd Year">3rd Year</option>
+                                    <option value="4th Year">4th Year</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="add-section">Section *</label>
+                            <input type="text" class="form-input" id="add-section" placeholder="e.g. A" value="A">
+                        </div>
+                        <div class="form-group">
+                            <label for="add-student-password">Password *</label>
+                            <input type="password" class="form-input" id="add-student-password" placeholder="Min 6 characters">
+                        </div>
+                    </div>
+
+                    <!-- Teacher Fields (Hidden by Default) -->
+                    <div id="add-teacher-fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="add-teacher-email">Email Address *</label>
+                            <input type="email" class="form-input" id="add-teacher-email" placeholder="e.g. teacher@college.edu">
+                        </div>
+                        <div class="form-group">
+                            <label for="add-teacher-mobile">Mobile Number *</label>
+                            <input type="text" class="form-input" id="add-teacher-mobile" placeholder="e.g. +919876543200">
+                        </div>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="add-teacher-dept">Department / Spec *</label>
+                                <input type="text" class="form-input" id="add-teacher-dept" placeholder="e.g. Computer Science">
+                            </div>
+                            <div class="form-group">
+                                <label for="add-teacher-section">Section *</label>
+                                <input type="text" class="form-input" id="add-teacher-section" placeholder="e.g. A" value="A">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="add-teacher-password">Password *</label>
+                            <input type="password" class="form-input" id="add-teacher-password" placeholder="Min 6 characters">
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button id="btn-save-user-record" class="btn-primary" style="flex-grow: 1;">
+                        <i class="fas fa-save"></i> Save User
+                    </button>
+                    <button class="btn-secondary" onclick="closeAddUserModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Face Kiosk Modal -->
+        <div class="custom-modal" id="modal-kiosk" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 18, 42, 0.7); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+            <div class="card" style="width: 100%; max-width: 400px; margin: 20px; border: 1px solid rgba(255,255,255,0.08); background: #0f172a; border-radius: var(--radius-lg); padding: 24px;">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px; margin-bottom: 16px;">
+                    <div>
+                        <h3 style="margin: 0; color: white;">Face Kiosk Enrollment</h3>
+                        <p id="kiosk-user-detail" style="font-size: 0.8rem; color: var(--text-secondary); margin: 2px 0 0 0;"></p>
+                    </div>
+                    <button onclick="closeKioskModal()" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.25rem;"><i class="fas fa-times"></i></button>
+                </div>
+                
+                <div>
+                    <!-- Camera element -->
+                    <div id="enroll-camera-area" style="display: block;">
+                        <div class="camera-container" style="max-width: 320px; aspect-ratio: 4/3; margin: 0 auto 14px auto; border-radius: var(--radius-md); overflow: hidden; border: 2px solid rgba(6,182,212,0.2);">
+                            <video id="enroll-video" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover;"></video>
+                        </div>
+                        
+                        <div class="snapshot-progress" style="display: flex; justify-content: center; gap: 8px; margin-bottom: 12px;">
+                            <div class="snapshot-dot" id="dot-1" style="width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);"></div>
+                            <div class="snapshot-dot" id="dot-2" style="width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);"></div>
+                            <div class="snapshot-dot" id="dot-3" style="width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);"></div>
+                            <div class="snapshot-dot" id="dot-4" style="width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);"></div>
+                            <div class="snapshot-dot" id="dot-5" style="width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);"></div>
+                        </div>
+                        
+                        <div class="text-center text-muted" style="font-size: 0.8rem; margin: 10px 0; line-height: 1.4;">
+                            Please shift your face slightly between snapshots (neutral, tilt left, tilt right, smile, look up).
+                        </div>
+                        
+                        <button id="btn-capture-snapshot" class="btn-primary" style="width: 100%; margin-top: 8px;">
+                            <i class="fas fa-camera-retro"></i> Capture Snapshot <span id="snapshot-count-text">(1/5)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel 5: Directory -->
+        <div class="settings-panel" id="panel-directory">
+            <!-- Styling scoped to Directory Panel -->
+            <style>
+                .dir-stats-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                    gap: 16px;
+                    margin-bottom: 24px;
+                }
+                .dir-stat-card {
+                    background: rgba(15, 23, 42, 0.4);
+                    border: 1px solid rgba(255, 255, 255, 0.06);
+                    border-radius: 12px;
+                    padding: 16px;
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                    box-shadow: var(--shadow);
+                }
+                .dir-stat-icon {
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 10px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 1.25rem;
+                }
+                .icon-users { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+                .icon-reg { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+                .icon-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+                .icon-teachers { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+                .icon-students { background: rgba(20, 184, 166, 0.15); color: #14b8a6; }
+
+                .dir-stat-info h4 {
+                    font-size: 0.75rem;
+                    color: var(--text-secondary);
+                    margin-bottom: 4px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                }
+                .dir-stat-info .num {
+                    font-size: 1.35rem;
+                    font-weight: 700;
+                    color: white;
+                }
+
+                .dir-filter-bar {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    gap: 16px;
+                    margin-bottom: 24px;
+                }
+                .dir-tabs {
+                    display: flex;
+                    background: rgba(15, 23, 42, 0.5);
+                    border: 1px solid rgba(255,255,255,0.06);
+                    padding: 4px;
+                    border-radius: 8px;
+                    gap: 4px;
+                }
+                .dir-tab {
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 0.85rem;
+                    font-weight: 500;
+                    transition: var(--transition);
+                    color: var(--text-secondary);
+                }
+                .dir-tab.active {
+                    background: var(--accent-gradient);
+                    color: white;
+                    box-shadow: 0 2px 8px var(--accent-glow);
+                }
+                .dir-search-box {
+                    position: relative;
+                    flex-grow: 1;
+                    max-width: 400px;
+                }
+                .dir-search-box i {
+                    position: absolute;
+                    left: 14px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    color: var(--text-muted);
+                    font-size: 0.9rem;
+                }
+                .dir-search-input {
+                    width: 100%;
+                    padding: 10px 16px 10px 40px;
+                    border-radius: 8px;
+                    border: 1px solid rgba(255,255,255,0.06);
+                    background: rgba(15, 23, 42, 0.4);
+                    color: white;
+                    font-size: 0.85rem;
+                }
+
+                .dir-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                    gap: 20px;
+                }
+                .dir-card {
+                    background: rgba(15, 23, 42, 0.35);
+                    backdrop-filter: blur(10px);
+                    border: 1px solid rgba(255,255,255,0.06);
+                    border-radius: 14px;
+                    padding: 20px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                    position: relative;
+                    overflow: hidden;
+                }
+                .dir-card:hover {
+                    transform: translateY(-5px);
+                    border-color: rgba(59, 130, 246, 0.3);
+                    box-shadow: 0 8px 30px rgba(59, 130, 246, 0.1);
+                }
+
+                .dir-card-header {
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                    margin-bottom: 16px;
+                    position: relative;
+                }
+                .dir-avatar-container {
+                    position: relative;
+                    width: 64px;
+                    height: 64px;
+                }
+                .dir-avatar {
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    border: 2px solid rgba(255,255,255,0.1);
+                }
+                .status-dot {
+                    position: absolute;
+                    top: 2px;
+                    right: 2px;
+                    width: 12px;
+                    height: 12px;
+                    border-radius: 50%;
+                    border: 2px solid #0f172a;
+                }
+                .status-dot.active { background: #10b981; }
+                .status-dot.inactive { background: #ef4444; }
+
+                .role-badge {
+                    position: absolute;
+                    top: 0;
+                    right: 0;
+                    font-size: 0.7rem;
+                    font-weight: 600;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    text-transform: uppercase;
+                }
+                .role-badge.teacher { background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
+                .role-badge.student { background: rgba(20, 184, 166, 0.15); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.3); }
+                .role-badge.advisor { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+                .dir-user-info h4 {
+                    font-size: 0.95rem;
+                    font-weight: 700;
+                    color: white;
+                    margin-bottom: 2px;
+                }
+                .dir-user-info .sub {
+                    font-size: 0.75rem;
+                    color: var(--text-secondary);
+                }
+
+                .dir-card-body {
+                    font-size: 0.8rem;
+                    color: var(--text-secondary);
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    margin-bottom: 16px;
+                    flex-grow: 1;
+                }
+                .dir-info-row {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+                .dir-info-row i {
+                    width: 16px;
+                    color: var(--text-muted);
+                }
+                .class-tag-container {
+                    display: flex;
+                    gap: 6px;
+                    flex-wrap: wrap;
+                    margin-top: 6px;
+                }
+                .class-tag {
+                    font-size: 0.7rem;
+                    font-weight: 500;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    background: rgba(255,255,255,0.04);
+                    border: 1px solid rgba(255,255,255,0.06);
+                    color: var(--text-secondary);
+                }
+
+                .verification-status-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    padding: 6px 12px;
+                    border-radius: 6px;
+                    width: 100%;
+                    justify-content: center;
+                    margin-top: 10px;
+                }
+                .verification-status-badge.registered {
+                    background: rgba(16, 185, 129, 0.1);
+                    color: #10b981;
+                    border: 1px solid rgba(16, 185, 129, 0.2);
+                }
+                .verification-status-badge.unregistered {
+                    background: rgba(239, 68, 68, 0.1);
+                    color: #ef4444;
+                    border: 1px solid rgba(239, 68, 68, 0.2);
+                }
+
+                .dir-card-footer {
+                    border-top: 1px solid rgba(255,255,255,0.06);
+                    padding-top: 12px;
+                    display: flex;
+                    justify-content: space-around;
+                    gap: 8px;
+                }
+                .dir-btn {
+                    background: transparent;
+                    border: none;
+                    color: var(--text-secondary);
+                    cursor: pointer;
+                    font-size: 0.75rem;
+                    font-weight: 500;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 4px;
+                    transition: all 0.2s ease;
+                    flex: 1;
+                }
+                .dir-btn:hover {
+                    color: white;
+                }
+                .dir-btn i {
+                    font-size: 0.95rem;
+                }
+                .dir-btn.delete:hover {
+                    color: #ef4444;
+                }
+            </style>
+
+            <!-- 1. Stats Row -->
+            <div class="dir-stats-grid">
+                <div class="dir-stat-card">
+                    <div class="dir-stat-icon icon-users"><i class="fas fa-users"></i></div>
+                    <div class="dir-stat-info">
+                        <h4>Total Users</h4>
+                        <div class="num">{{ total_users }}</div>
+                    </div>
+                </div>
+                <div class="dir-stat-card">
+                    <div class="dir-stat-icon icon-reg"><i class="fas fa-id-card-alt"></i></div>
+                    <div class="dir-stat-info">
+                        <h4>Faces Registered</h4>
+                        <div class="num">{{ faces_registered }}</div>
+                    </div>
+                </div>
+                <div class="dir-stat-card">
+                    <div class="dir-stat-icon icon-pending"><i class="fas fa-user-clock"></i></div>
+                    <div class="dir-stat-info">
+                        <h4>Pending</h4>
+                        <div class="num">{{ pending_registration }}</div>
+                    </div>
+                </div>
+                <div class="dir-stat-card">
+                    <div class="dir-stat-icon icon-teachers"><i class="fas fa-chalkboard-teacher"></i></div>
+                    <div class="dir-stat-info">
+                        <h4>Teachers</h4>
+                        <div class="num">{{ total_teachers }}</div>
+                    </div>
+                </div>
+                <div class="dir-stat-card">
+                    <div class="dir-stat-icon icon-students"><i class="fas fa-user-graduate"></i></div>
+                    <div class="dir-stat-info">
+                        <h4>Students</h4>
+                        <div class="num">{{ total_students }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Filters & Search -->
+            <div class="dir-filter-bar">
+                <div class="dir-tabs">
+                    <div class="dir-tab active" onclick="filterDirectory('all')">All Users</div>
+                    <div class="dir-tab" onclick="filterDirectory('student')">Students</div>
+                    <div class="dir-tab" onclick="filterDirectory('teacher')">Teachers</div>
+                    <div class="dir-tab" onclick="filterDirectory('advisor')">Advisors</div>
+                </div>
+                
+                <div class="dir-search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" class="dir-search-input" id="dir-search" placeholder="Search by name, email or reg no..." onkeyup="searchDirectory()">
+                </div>
+                
+                <button class="btn-primary" onclick="openAddUserModal()">
+                    <i class="fas fa-plus"></i> Add New User
+                </button>
+            </div>
+
+            <!-- 3. Cards Grid -->
+            <div class="dir-grid" id="dir-cards-container">
+                <!-- A. Teachers List -->
+                {% for t in teachers %}
+                    <div class="dir-card" data-role="teacher" data-search="{{ t.name.lower() }} {{ t.email.lower() }}">
+                        <div>
+                            <div class="dir-card-header">
+                                <div class="dir-avatar-container">
+                                    <svg class="dir-avatar" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="50" cy="50" r="48" fill="#1e1b4b"/>
+                                        <circle cx="50" cy="40" r="18" fill="#8b5cf6"/>
+                                        <path d="M25 80 C 25 60, 75 60, 75 80" fill="#8b5cf6"/>
+                                    </svg>
+                                    <span class="status-dot {% if t.face_registered %}active{% else %}inactive{% endif %}"></span>
+                                </div>
+                                <div class="dir-user-info">
+                                    <h4>{{ t.name }}</h4>
+                                    <span class="sub">{{ t.email }}</span>
+                                </div>
+                                <span class="role-badge teacher">Teacher</span>
+                            </div>
+                            
+                            <div class="dir-card-body">
+                                <div class="dir-info-row">
+                                    <i class="fas fa-phone-alt"></i>
+                                    <span>{{ t.mobile_number or 'N/A' }}</span>
+                                </div>
+                                <div class="class-tag-container">
+                                    <span class="class-tag">{{ t.department_or_class }}</span>
+                                    {% if t.year %}<span class="class-tag">{{ t.year }}</span>{% endif %}
+                                    <span class="class-tag">Sec {{ t.section }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            {% if t.face_registered %}
+                                <div class="verification-status-badge registered">
+                                    <i class="fas fa-check-circle"></i> Face Registered
+                                </div>
+                            {% else %}
+                                <div class="verification-status-badge unregistered">
+                                    <i class="fas fa-times-circle"></i> Face Not Registered
+                                </div>
+                            {% endif %}
+                            
+                            <div class="dir-card-footer">
+                                <button class="dir-btn" onclick="openKioskModal('{{ t.id }}', 'teacher', '{{ t.name }}')">
+                                    <i class="fas fa-portrait"></i> Register Face
+                                </button>
+                                {% if t.face_registered %}
+                                    <button class="dir-btn delete" onclick="deleteFace('teacher', '{{ t.id }}', '{{ t.name }}')">
+                                        <i class="fas fa-user-minus"></i> Del Face
+                                    </button>
+                                {% endif %}
+                                <button class="dir-btn delete" onclick="deleteUser('teacher', '{{ t.id }}', '{{ t.name }}')">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+
+                <!-- B. Students List -->
+                {% for s in students %}
+                    <div class="dir-card" data-role="student" data-search="{{ s.name.lower() }} {{ s.email.lower() }} {{ (s.reg_number or '').lower() }}">
+                        <div>
+                            <div class="dir-card-header">
+                                <div class="dir-avatar-container">
+                                    <svg class="dir-avatar" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="50" cy="50" r="48" fill="#115e59"/>
+                                        <circle cx="50" cy="40" r="18" fill="#0d9488"/>
+                                        <path d="M25 80 C 25 60, 75 60, 75 80" fill="#0d9488"/>
+                                    </svg>
+                                    <span class="status-dot {% if s.face_registered %}active{% else %}inactive{% endif %}"></span>
+                                </div>
+                                <div class="dir-user-info">
+                                    <h4>{{ s.name }}</h4>
+                                    <span class="sub">Reg: {{ s.reg_number or 'N/A' }}</span>
+                                </div>
+                                <span class="role-badge student">Student</span>
+                            </div>
+                            
+                            <div class="dir-card-body">
+                                <div class="dir-info-row">
+                                    <i class="fas fa-envelope"></i>
+                                    <span>{{ s.email }}</span>
+                                </div>
+                                <div class="dir-info-row">
+                                    <i class="fas fa-users-cog"></i>
+                                    <span>Parent: {{ s.parent_phone or 'N/A' }}</span>
+                                </div>
+                                <div class="class-tag-container">
+                                    <span class="class-tag">{{ s.department_or_class }}</span>
+                                    {% if s.year %}<span class="class-tag">{{ s.year }}</span>{% endif %}
+                                    <span class="class-tag">Sec {{ s.section }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            {% if s.face_registered %}
+                                <div class="verification-status-badge registered">
+                                    <i class="fas fa-check-circle"></i> Face Registered
+                                </div>
+                            {% else %}
+                                <div class="verification-status-badge unregistered">
+                                    <i class="fas fa-times-circle"></i> Face Not Registered
+                                </div>
+                            {% endif %}
+                            
+                            <div class="dir-card-footer">
+                                <button class="dir-btn" onclick="openKioskModal('{{ s.id }}', 'student', '{{ s.name }}')">
+                                    <i class="fas fa-portrait"></i> Register Face
+                                </button>
+                                {% if s.face_registered %}
+                                    <button class="dir-btn delete" onclick="deleteFace('student', '{{ s.id }}', '{{ s.name }}')">
+                                        <i class="fas fa-user-minus"></i> Del Face
+                                    </button>
+                                {% endif %}
+                                <button class="dir-btn delete" onclick="deleteUser('student', '{{ s.id }}', '{{ s.name }}')">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+
+                <!-- C. Advisors List -->
+                {% for section in class_sections %}
+                    <div class="dir-card" data-role="advisor" data-search="{{ section.advisor_name.lower() }} {{ section.advisor_email.lower() }}">
+                        <div>
+                            <div class="dir-card-header">
+                                <div class="dir-avatar-container">
+                                    <svg class="dir-avatar" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="50" cy="50" r="48" fill="#78350f"/>
+                                        <circle cx="50" cy="40" r="18" fill="#d97706"/>
+                                        <path d="M25 80 C 25 60, 75 60, 75 80" fill="#d97706"/>
+                                    </svg>
+                                    <span class="status-dot active"></span>
+                                </div>
+                                <div class="dir-user-info">
+                                    <h4>{{ section.advisor_name }}</h4>
+                                    <span class="sub">{{ section.advisor_email }}</span>
+                                </div>
+                                <span class="role-badge advisor">Advisor</span>
+                            </div>
+                            
+                            <div class="dir-card-body">
+                                <div class="dir-info-row">
+                                    <i class="fas fa-phone-alt"></i>
+                                    <span>{{ section.advisor_phone or 'N/A' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="verification-status-badge registered" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2);">
+                                <i class="fas fa-link"></i> Assigned Class Advisor
+                            </div>
+                            
+                            <div class="dir-card-footer">
+                                <button class="dir-btn" onclick="editAdvisorMapping('{{ section.id }}', '{{ section.advisor_name }}', '{{ section.advisor_email }}', '{{ section.advisor_phone }}')">
+                                    <i class="fas fa-edit"></i> Edit Mapping
+                                </button>
+                                <button class="dir-btn delete" onclick="deleteAdvisorMapping('{{ section.id }}')">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Panel 6: Notification Logs -->
+        <div class="settings-panel" id="panel-logs">
+            <div class="card">
+                <div class="card-header">
+                    <h3>WhatsApp & Email Notifications Dispatch Log</h3>
+                    <span class="badge badge-warning">Simulation Live</span>
+                </div>
+                <div class="table-wrapper">
+                    {% if notification_logs %}
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Recipient</th>
+                                    <th>Target Contact</th>
+                                    <th>Alert Type</th>
+                                    <th>Channel</th>
+                                    <th>Delivery status</th>
+                                    <th>Timestamp</th>
+                                    <th>Message Content</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in notification_logs %}
+                                    <tr>
+                                        <td><strong>{{ log.recipient_name }}</strong></td>
+                                        <td>{{ log.recipient_contact }}</td>
+                                        <td><span style="font-size: 0.8rem; font-weight:600;">{{ log.type }}</span></td>
+                                        <td>
+                                            {% if log.channel == 'WhatsApp' %}
+                                                <span style="color: #25d366; font-weight: 600;"><i class="fab fa-whatsapp"></i> WhatsApp</span>
+                                            {% else %}
+                                                <span style="color: #3b82f6; font-weight: 600;"><i class="far fa-envelope"></i> Email</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if log.status == 'Simulated' %}
+                                                <span class="badge badge-warning" style="padding: 2px 8px; font-size:0.75rem;">Simulated</span>
+                                            {% elif log.status == 'Sent' %}
+                                                <span class="badge badge-present" style="padding: 2px 8px; font-size:0.75rem;">Sent</span>
+                                            {% else %}
+                                                <span class="badge badge-absent" style="padding: 2px 8px; font-size:0.75rem;">{{ log.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="font-size: 0.8rem; color: var(--text-secondary);">{{ log.timestamp.strftime('%H:%M:%S (%b %d)') }}</td>
+                                        <td style="max-width: 260px; font-size: 0.75rem; color: var(--text-secondary); white-space: pre-wrap; font-family: monospace; border: 1px solid var(--border-color); padding: 8px; border-radius: var(--radius-sm); background: rgba(0,0,0,0.2);">{{ log.message }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="text-center text-muted" style="padding: 60px 0;">
+                            No notifications sent yet today. Mark final attendance to send reports.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel 7: Advisor Mapping -->
+        <div class="settings-panel" id="panel-advisors">
+            <div class="content-grid" style="grid-template-columns: 1.4fr 1.1fr; gap: 20px;">
+                <!-- Mappings Directory -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Class Advisor Directory</h3>
+                    </div>
+                    <div class="table-wrapper">
+                        {% if class_sections %}
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Advisor Name</th>
+                                        <th>WhatsApp</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for section in class_sections %}
+                                        <tr>
+                                            <td>
+                                                <div><strong>{{ section.advisor_name }}</strong></div>
+                                                <div style="font-size: 0.8rem; color: var(--text-secondary);">{{ section.advisor_email }}</div>
+                                                <div style="margin-top: 4px;">
+                                                    {% if section.advisor %}
+                                                        {% if section.advisor.face_registered %}
+                                                            <span class="badge badge-success" style="padding: 2px 6px; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px; background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2);"><i class="fas fa-check-circle"></i> Face Enrolled</span>
+                                                        {% else %}
+                                                            <span class="badge badge-warning" style="padding: 2px 6px; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px; background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2);"><i class="fas fa-exclamation-triangle"></i> Face Pending</span>
+                                                            <button class="btn-primary" onclick="openKioskModal('{{ section.advisor.id }}', 'teacher', '{{ section.advisor.name }}')" style="padding: 2px 6px; font-size: 0.7rem; border-radius: var(--radius-sm); border: none; cursor: pointer; margin-left: 6px; background: var(--accent-gradient); color: white; display: inline-flex; align-items: center; gap: 3px;"><i class="fas fa-camera"></i> Register</button>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="badge badge-danger" style="padding: 2px 6px; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px; background: rgba(244, 63, 94, 0.1); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.2);"><i class="fas fa-times-circle"></i> User Missing</span>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                            <td><span style="font-family: monospace;">{{ section.advisor_phone or 'N/A' }}</span></td>
+                                            <td>
+                                                <div style="display: flex; gap: 6px;">
+                                                    <button class="btn-primary" onclick="editAdvisorMapping('{{ section.id }}', '{{ section.advisor_name }}', '{{ section.advisor_email }}', '{{ section.advisor_phone }}')" style="padding: 4px 8px; font-size: 0.8rem; border: none; border-radius: var(--radius-sm); cursor: pointer; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+                                                        <i class="fas fa-edit"></i> Edit
+                                                    </button>
+                                                    <button class="btn-secondary" onclick="deleteAdvisorMapping('{{ section.id }}')" style="padding: 4px 8px; font-size: 0.8rem; background: var(--error-color); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;">
+                                                        <i class="fas fa-trash"></i> Delete
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <div class="text-center text-muted" style="padding: 60px 0;">
+                                <i class="fas fa-link" style="font-size: 3rem; margin-bottom: 12px; color: var(--text-muted);"></i>
+                                <p>No class advisor mappings configured yet.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Create/Edit Form -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 id="advisor-form-title">Register Class Advisor</h3>
+                    </div>
+                    <input type="hidden" id="map-id" value="">
+                    
+                    <div class="form-group">
+                        <label for="map-name">Advisor Name *</label>
+                        <input type="text" id="map-name" class="form-input" placeholder="e.g. Dr. Sarah Connor">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="map-email">Email Address *</label>
+                        <input type="email" id="map-email" class="form-input" placeholder="e.g. sarah@college.edu">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="map-phone">WhatsApp Number (E.164) *</label>
+                        <input type="text" id="map-phone" class="form-input" placeholder="e.g. +919876543210">
+                    </div>
+                    
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label for="map-password">Password *</label>
+                            <input type="password" id="map-password" class="form-input" placeholder="e.g. password123">
+                        </div>
+                        <div class="form-group">
+                            <label for="map-confirm-password">Confirm Password *</label>
+                            <input type="password" id="map-confirm-password" class="form-input" placeholder="e.g. password123">
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button id="btn-save-advisor-map" class="btn-primary" style="flex-grow: 1;">
+                            <i class="fas fa-save"></i> Save Advisor
+                        </button>
+                        <button id="btn-cancel-advisor-edit" class="btn-secondary" style="display: none;" onclick="clearAdvisorForm()">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/camera.js') }}"></script>
+<script>
+    // Tab switching logic
+    document.querySelectorAll('.settings-menu-item').forEach(item => {
+        item.addEventListener('click', () => {
+            document.querySelectorAll('.settings-menu-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.settings-panel').forEach(el => el.classList.remove('active'));
+            
+            item.classList.add('active');
+            document.getElementById(item.getAttribute('data-target')).classList.add('active');
+        });
+    });
+    
+    // Global filter helper for Directory
+    let currentDirRole = 'all';
+    
+    window.filterDirectory = function(role) {
+        currentDirRole = role;
+        
+        // Update tab styling
+        document.querySelectorAll('.dir-tab').forEach(tab => {
+            tab.classList.remove('active');
+            if (tab.textContent.toLowerCase().includes(role) || (role === 'all' && tab.textContent.toLowerCase().includes('all'))) {
+                tab.classList.add('active');
+            }
+        });
+        
+        applyDirectoryFilters();
+    };
+
+    window.searchDirectory = function() {
+        applyDirectoryFilters();
+    };
+
+    function applyDirectoryFilters() {
+        const searchQuery = document.getElementById('dir-search').value.toLowerCase().trim();
+        const cards = document.querySelectorAll('#dir-cards-container .dir-card');
+        
+        cards.forEach(card => {
+            const role = card.getAttribute('data-role');
+            const searchText = card.getAttribute('data-search');
+            
+            const roleMatches = (currentDirRole === 'all' || role === currentDirRole);
+            const searchMatches = (!searchQuery || searchText.includes(searchQuery));
+            
+            if (roleMatches && searchMatches) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    // Switch Settings Menu Tabs
+    window.switchToTab = function(tabId) {
+        const menuItem = document.querySelector(`.settings-menu-item[data-target="${tabId}"]`);
+        if (menuItem) {
+            menuItem.click();
+        }
+    };
+
+    // Auto-select user and open Kiosk modal
+    let activeEnrollUser = null; // { type, id }
+    let snapshotIndex = 1;
+    const video = document.getElementById('enroll-video');
+    const btnCapture = document.getElementById('btn-capture-snapshot');
+    const snapshotCountText = document.getElementById('snapshot-count-text');
+
+    window.openKioskModal = async function(userId, role, userName) {
+        activeEnrollUser = { type: role, id: parseInt(userId) };
+        snapshotIndex = 1;
+        
+        // Pre-fill header name and details
+        document.getElementById('kiosk-user-detail').textContent = `${role.toUpperCase()}: ${userName} (ID: ${userId})`;
+        
+        // Show modal
+        document.getElementById('modal-kiosk').style.display = 'flex';
+        
+        // Start camera automatically
+        const success = await startCamera(video);
+        if (success) {
+            resetDots();
+            const firstDot = document.getElementById('dot-1');
+            if (firstDot) {
+                firstDot.style.background = '#06b6d4';
+                firstDot.style.borderColor = '#06b6d4';
+            }
+            snapshotCountText.textContent = `(1/5)`;
+            btnCapture.disabled = false;
+            btnCapture.innerHTML = `<i class="fas fa-camera-retro"></i> Capture Snapshot <span id="snapshot-count-text">(1/5)</span>`;
+        } else {
+            showToast("Failed to initialize camera.", "error");
+            closeKioskModal();
+        }
+    };
+
+    window.closeKioskModal = function() {
+        stopCamera();
+        document.getElementById('modal-kiosk').style.display = 'none';
+        activeEnrollUser = null;
+    };
+
+    btnCapture.addEventListener('click', async () => {
+        if (!activeEnrollUser) return;
+        
+        btnCapture.disabled = true;
+        btnCapture.textContent = "Capturing...";
+        
+        const res = await captureEnrollmentSnapshot(video, activeEnrollUser.id, activeEnrollUser.type, snapshotIndex);
+        
+        if (res.success) {
+            // Update dots
+            const dot = document.getElementById(`dot-${snapshotIndex}`);
+            if (dot) {
+                dot.style.background = '#10b981';
+                dot.style.borderColor = '#10b981';
+            }
+            
+            snapshotIndex++;
+            
+            if (snapshotIndex <= 5) {
+                // Move to next dot
+                const nextDot = document.getElementById(`dot-${snapshotIndex}`);
+                if (nextDot) {
+                    nextDot.style.background = '#06b6d4';
+                    nextDot.style.borderColor = '#06b6d4';
+                }
+                
+                snapshotCountText.textContent = `(${snapshotIndex}/5)`;
+                btnCapture.disabled = false;
+                btnCapture.innerHTML = `<i class="fas fa-camera-retro"></i> Capture Snapshot <span id="snapshot-count-text">(${snapshotIndex}/5)</span>`;
+            } else {
+                // Done enrolling 5 snapshots
+                showToast("Enrollment successful! Model has been trained.", "success");
+                closeKioskModal();
+                setTimeout(() => window.location.reload(), 1500);
+            }
+        } else {
+            showToast(`Error capturing: ${res.message}`, "error");
+            btnCapture.disabled = false;
+            btnCapture.innerHTML = `<i class="fas fa-camera-retro"></i> Capture Snapshot <span id="snapshot-count-text">(${snapshotIndex}/5)</span>`;
+        }
+    });
+
+    function resetDots() {
+        for (let i = 1; i <= 5; i++) {
+            const dot = document.getElementById(`dot-${i}`);
+            if (dot) {
+                dot.style.background = 'rgba(255,255,255,0.1)';
+                dot.style.borderColor = 'rgba(255,255,255,0.2)';
+            }
+        }
+    }
+    
+    async function deleteFace(userType, userId, userName) {
+        if (!confirm(`Are you sure you want to delete face enrollment records for ${userName}?`)) return;
+        
+        try {
+            const res = await fetch('/api/settings/delete_face', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_type: userType,
+                    user_id: parseInt(userId)
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, "success");
+                setTimeout(() => window.location.reload(), 2000);
+            } else {
+                showToast(data.message, "error");
+            }
+        } catch (err) {
+            console.error(err);
+            showToast("Failed to delete facial profile.", "error");
+        }
+    }
+
+    async function deleteUser(role, userId, userName) {
+        if (!confirm(`Are you sure you want to completely delete the record for ${userName}? This will also delete all associated face models and attendance records.`)) {
+            return;
+        }
+        
+        try {
+            const res = await fetch('/api/settings/delete_user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role, user_id: parseInt(userId) })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, "success");
+                setTimeout(() => window.location.reload(), 2000);
+            } else {
+                showToast(data.message, "error");
+            }
+        } catch (err) {
+            console.error(err);
+            showToast("Failed to delete user record.", "error");
+        }
+    }
+
+    // Toggle fields based on role select inside Add User Modal
+    window.toggleFormRoleFields = function() {
+        const role = document.getElementById('add-role-select').value;
+        const studentFields = document.getElementById('add-student-fields');
+        const teacherFields = document.getElementById('add-teacher-fields');
+        
+        if (role === 'student') {
+            studentFields.style.display = 'block';
+            teacherFields.style.display = 'none';
+        } else {
+            studentFields.style.display = 'none';
+            teacherFields.style.display = 'block';
+        }
+    };
+
+    window.openAddUserModal = function() {
+        document.getElementById('modal-add-user').style.display = 'flex';
+        clearAddUserForm();
+        
+        const deptInput = document.getElementById('add-dept');
+        const yearSelect = document.getElementById('add-year');
+        const sectionInput = document.getElementById('add-section');
+        
+        deptInput.readOnly = false;
+        yearSelect.disabled = ("{{ current_user.institution_type }}" === "School");
+        sectionInput.readOnly = false;
+    };
+
+    window.closeAddUserModal = function() {
+        document.getElementById('modal-add-user').style.display = 'none';
+        const errorContainer = document.getElementById('modal-error-container');
+        if (errorContainer) errorContainer.style.display = 'none';
+    };
+
+    function clearAddUserForm() {
+        document.getElementById('add-name').value = '';
+        document.getElementById('add-reg-num').value = '';
+        document.getElementById('add-student-email').value = '';
+        document.getElementById('add-mobile').value = '';
+        document.getElementById('add-parent-mobile').value = '';
+        document.getElementById('add-dept').value = '';
+        document.getElementById('add-year').value = '';
+        document.getElementById('add-section').value = 'A';
+        document.getElementById('add-student-password').value = '';
+        
+        document.getElementById('add-teacher-email').value = '';
+        document.getElementById('add-teacher-mobile').value = '';
+        document.getElementById('add-teacher-dept').value = '';
+        document.getElementById('add-teacher-section').value = 'A';
+        document.getElementById('add-teacher-password').value = '';
+        
+        document.getElementById('add-role-select').value = 'student';
+        
+        const errorContainer = document.getElementById('modal-error-container');
+        if (errorContainer) {
+            errorContainer.style.display = 'none';
+            document.getElementById('modal-error-text').textContent = '';
+        }
+        
+        window.toggleFormRoleFields();
+    }
+
+    const btnSaveUser = document.getElementById('btn-save-user-record');
+    if (btnSaveUser) {
+        btnSaveUser.addEventListener('click', async () => {
+            const role = document.getElementById('add-role-select').value;
+            const name = document.getElementById('add-name').value.trim();
+            
+            const errorContainer = document.getElementById('modal-error-container');
+            const errorText = document.getElementById('modal-error-text');
+            if (errorContainer) errorContainer.style.display = 'none';
+
+            function showModalError(msg) {
+                if (errorContainer && errorText) {
+                    errorText.textContent = msg;
+                    errorContainer.style.display = 'block';
+                    document.querySelector('#modal-add-user .card').scrollTop = 0;
+                } else {
+                    showToast(msg, "error");
+                }
+            }
+
+            if (!name) {
+                showModalError("Please enter a name.");
+                return;
+            }
+
+            let payload = { role, name };
+
+            if (role === 'student') {
+                const register_number = document.getElementById('add-reg-num').value.trim();
+                const email = document.getElementById('add-student-email').value.trim();
+                const mobile_number = document.getElementById('add-mobile').value.trim();
+                const parent_phone = document.getElementById('add-parent-mobile').value.trim();
+                const department = document.getElementById('add-dept').value.trim();
+                const year = document.getElementById('add-year').value;
+                const section = document.getElementById('add-section').value.trim();
+                const password = document.getElementById('add-student-password').value.trim();
+
+                const isSchool = ("{{ current_user.institution_type }}" === "School");
+                if (!register_number || !department || (!isSchool && !year) || !section || !parent_phone) {
+                    showModalError("Please fill in all required student fields (Register Number, Parent Mobile Number, Dept, Section are required, and Year for College).");
+                    return;
+                }
+
+                // Check parent phone regex format
+                const phoneRegex = /^\+\d{10,15}$/;
+                if (!phoneRegex.test(parent_phone)) {
+                    showModalError("Parent Mobile Number must be in E.164 international format (e.g. +919876543210).");
+                    return;
+                }
+
+                payload = { 
+                    ...payload, 
+                    register_number, 
+                    email,
+                    mobile_number,
+                    parent_phone,
+                    department, 
+                    year, 
+                    section,
+                    password
+                };
+            } else {
+                const teacher_id = document.getElementById('add-teacher-email').value.trim();
+                const email = document.getElementById('add-teacher-dept').value.trim(); // maps to subject/spec field in backend
+                const mobile_number = document.getElementById('add-teacher-mobile').value.trim();
+                const department = document.getElementById('add-teacher-dept').value.trim();
+                const section = document.getElementById('add-teacher-section').value.trim();
+                const password = document.getElementById('add-teacher-password').value.trim();
+
+                if (!teacher_id || !email) {
+                    showModalError("Please fill in all required teacher fields.");
+                    return;
+                }
+
+                payload = { 
+                    ...payload, 
+                    teacher_id, 
+                    email, 
+                    mobile_number, 
+                    department, 
+                    section, 
+                    password 
+                };
+            }
+
+            btnSaveUser.disabled = true;
+            btnSaveUser.textContent = "Saving...";
+
+            try {
+                const res = await fetch('/api/settings/add_user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showToast(data.message, "success");
+                    closeAddUserModal();
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showModalError(data.message || "Failed to save user record.");
+                    btnSaveUser.disabled = false;
+                    btnSaveUser.innerHTML = `<i class="fas fa-save"></i> Save User`;
+                }
+            } catch (err) {
+                console.error(err);
+                showModalError("Failed to save user record due to network error.");
+                btnSaveUser.disabled = false;
+                btnSaveUser.innerHTML = `<i class="fas fa-save"></i> Save User`;
+            }
+        });
+    }
+
+    // AI Configuration Save Handler
+    const btnSaveAiConfig = document.getElementById('btn-save-ai-config');
+    if (btnSaveAiConfig) {
+        btnSaveAiConfig.addEventListener('click', async () => {
+            const provider = document.getElementById('ai-provider-select').value;
+            const api_key = document.getElementById('ai-key-input').value.trim();
+            
+            if (!api_key) {
+                showToast("Please enter a valid API key.", "error");
+                return;
+            }
+            
+            btnSaveAiConfig.disabled = true;
+            btnSaveAiConfig.textContent = "Saving...";
+            
+            try {
+                const res = await fetch('/api/settings/save_ai_config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ provider, api_key })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showToast(data.message, "success");
+                    setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    showToast(`Error: ${data.message}`, "error");
+                    btnSaveAiConfig.disabled = false;
+                    btnSaveAiConfig.innerHTML = `<i class="fas fa-save"></i> Save AI Config`;
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to save AI configuration.", "error");
+                btnSaveAiConfig.disabled = false;
+                btnSaveAiConfig.innerHTML = `<i class="fas fa-save"></i> Save AI Config`;
+            }
+        });
+    }
+
+    // Save Advisor Mapping
+    const btnSaveAdvisorMap = document.getElementById('btn-save-advisor-map');
+    if (btnSaveAdvisorMap) {
+        btnSaveAdvisorMap.addEventListener('click', async () => {
+            const mapId = document.getElementById('map-id').value;
+            const name = document.getElementById('map-name').value.trim();
+            const email = document.getElementById('map-email').value.trim();
+            const phone = document.getElementById('map-phone').value.trim();
+            const password = document.getElementById('map-password').value;
+            const confirmPassword = document.getElementById('map-confirm-password').value;
+            
+            if (!name || !email || !phone || (!mapId && (!password || !confirmPassword))) {
+                showToast("Please fill in all required fields.", "error");
+                return;
+            }
+            if (password && password !== confirmPassword) {
+                showToast("Passwords do not match.", "error");
+                return;
+            }
+            
+            btnSaveAdvisorMap.disabled = true;
+            btnSaveAdvisorMap.textContent = "Saving...";
+            
+            const payload = {
+                advisor_name: name,
+                advisor_email: email,
+                advisor_phone: phone,
+                password: password,
+                confirm_password: confirmPassword
+            };
+            if (mapId) {
+                payload.id = parseInt(mapId);
+            }
+            
+            try {
+                const res = await fetch('/api/settings/save_advisor_map', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, "success");
+                    if (data.advisor_id && !data.advisor_face_registered) {
+                        showToast("Advisor created. Automatically opening Face Registration...", "warning");
+                        setTimeout(() => {
+                            openKioskModal(data.advisor_id, 'teacher', name);
+                        }, 1000);
+                        return;
+                    }
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showToast(`Error: ${data.message}`, "error");
+                    btnSaveAdvisorMap.disabled = false;
+                    btnSaveAdvisorMap.innerHTML = `<i class="fas fa-save"></i> Save Advisor`;
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to save advisor.", "error");
+                btnSaveAdvisorMap.disabled = false;
+                btnSaveAdvisorMap.innerHTML = `<i class="fas fa-save"></i> Save Advisor`;
+            }
+        });
+    }
+
+    // Edit Advisor Mapping (populates form)
+    window.editAdvisorMapping = function(id, name, email, phone) {
+        // Switch to panel-advisors tab if not already active
+        document.querySelectorAll('.settings-menu-item').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.settings-panel').forEach(el => el.classList.remove('active'));
+        const menuItem = document.querySelector('.settings-menu-item[data-target="panel-advisors"]');
+        if (menuItem) menuItem.classList.add('active');
+        const panel = document.getElementById('panel-advisors');
+        if (panel) panel.classList.add('active');
+
+        document.getElementById('map-id').value = id;
+        document.getElementById('map-name').value = name;
+        document.getElementById('map-email').value = email;
+        document.getElementById('map-phone').value = phone;
+        document.getElementById('map-password').value = "";
+        document.getElementById('map-confirm-password').value = "";
+        
+        document.getElementById('advisor-form-title').textContent = "Edit Class Advisor";
+        document.getElementById('btn-save-advisor-map').innerHTML = `<i class="fas fa-edit"></i> Update Advisor`;
+        document.getElementById('btn-cancel-advisor-edit').style.display = "block";
+        
+        // Scroll form into view
+        document.getElementById('advisor-form-title').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Clear Form
+    window.clearAdvisorForm = function() {
+        document.getElementById('map-id').value = "";
+        document.getElementById('map-name').value = "";
+        document.getElementById('map-email').value = "";
+        document.getElementById('map-phone').value = "";
+        document.getElementById('map-password').value = "";
+        document.getElementById('map-confirm-password').value = "";
+        
+        document.getElementById('advisor-form-title').textContent = "Register Class Advisor";
+        document.getElementById('btn-save-advisor-map').innerHTML = `<i class="fas fa-save"></i> Save Advisor`;
+        document.getElementById('btn-cancel-advisor-edit').style.display = "none";
+    }
+
+    // Delete Advisor Mapping
+    window.deleteAdvisorMapping = async function(mappingId) {
+        if (!confirm("Are you sure you want to delete this advisor mapping?")) return;
+        
+        try {
+            const res = await fetch('/api/settings/delete_advisor_map', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mapping_id: parseInt(mappingId) })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, "success");
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showToast(`Error: ${data.message}`, "error");
+            }
+        } catch (err) {
+            console.error(err);
+            showToast("Failed to delete mapping.", "error");
+        }
+    }
+</script>
+{% endblock %}
